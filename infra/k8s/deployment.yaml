@@ -4,7 +4,7 @@ metadata:
   name: sentinel-api
   labels: {app: sentinel-api}
 spec:
-  replicas: 3
+  replicas: 2
   strategy: {type: RollingUpdate, rollingUpdate: {maxUnavailable: 0, maxSurge: 1}}
   selector: {matchLabels: {app: sentinel-api}}
   template:
@@ -17,7 +17,8 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 10001, fsGroup: 10001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: ghcr.io/your-org/sentinel-dd:1.0.0
+          image: ghcr.io/your-org/sentinel-dd:2.0.0
+          args: [serve]
           ports: [{containerPort: 8000}]
           envFrom:
             - configMapRef: {name: sentinel-config}
@@ -31,10 +32,10 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities: {drop: [ALL]}
-          volumeMounts: [{name: tmp, mountPath: /tmp}, {name: var, mountPath: /app/var}]
+          volumeMounts: [{name: tmp, mountPath: /tmp}, {name: data, mountPath: /data}]
       volumes:
         - {name: tmp, emptyDir: {}}
-        - {name: var, emptyDir: {}}
+        - {name: data, persistentVolumeClaim: {claimName: sentinel-data}}
 ---
 apiVersion: v1
 kind: Service
@@ -48,7 +49,7 @@ kind: HorizontalPodAutoscaler
 metadata: {name: sentinel-api}
 spec:
   scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: sentinel-api}
-  minReplicas: 3
+  minReplicas: 2
   maxReplicas: 12
   metrics:
     - type: Resource
@@ -58,7 +59,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata: {name: sentinel-api}
 spec:
-  minAvailable: 2
+  minAvailable: 1
   selector: {matchLabels: {app: sentinel-api}}
 ---
 apiVersion: networking.k8s.io/v1
@@ -71,5 +72,6 @@ spec:
     - from: [{namespaceSelector: {matchLabels: {name: ingress}}}]
       ports: [{port: 8000}]
   egress:
-    - to: [{podSelector: {matchLabels: {app: qdrant}}}, {podSelector: {matchLabels: {app: postgres}}}]
-    - ports: [{port: 443, protocol: TCP}, {port: 53, protocol: UDP}]   # LLM provider APIs + DNS
+    - to: [{podSelector: {matchLabels: {app: postgres}}}]
+      ports: [{port: 5432, protocol: TCP}]
+    - ports: [{port: 443, protocol: TCP}, {port: 53, protocol: UDP}]   # SEC, GLEIF, DOJ, GDELT, list publishers, LLM APIs + DNS

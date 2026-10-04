@@ -1,45 +1,48 @@
-# Local production-like stack: API + Qdrant + Postgres/pgvector + MLflow + Prometheus
+# Production-like local stack: PostgreSQL + Sentinel (API + analyst dashboard) + Prometheus.
+#   cp .env.example .env   # set SENTINEL_JWT_SECRET, SENTINEL_SEC_USER_AGENT, POSTGRES_PASSWORD
+#   docker compose up -d --build
+#   docker compose run --rm api sources refresh --all
+#   docker compose run --rm -e SENTINEL_NEW_PASSWORD=... api users create --username alice --roles analyst
 services:
-  api:
-    build: .
-    ports: ["8000:8000"]
-    env_file: [.env]
-    environment:
-      SENTINEL_ENV: dev                      # enables /auth/token demo login; use 'prod' behind an IdP
-      SENTINEL_MLFLOW_TRACKING_URI: http://mlflow:5000
-    depends_on: [qdrant, postgres, mlflow]
-    read_only: true
-    tmpfs: [/tmp]
-    volumes: [sentinel-var:/app/var]
-    security_opt: ["no-new-privileges:true"]
-
-  qdrant:
-    image: qdrant/qdrant:v1.12.4
-    ports: ["6333:6333"]
-    volumes: [qdrant-data:/qdrant/storage]
-
   postgres:
-    image: pgvector/pgvector:pg16
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: sentinel
-      POSTGRES_PASSWORD: sentinel          # local only; use a secret manager in cloud environments
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: sentinel
-    ports: ["5432:5432"]
     volumes: [pg-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinel"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
 
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.16.2
-    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow/mlflow.db --default-artifact-root /mlflow/artifacts
-    ports: ["5000:5000"]
-    volumes: [mlflow-data:/mlflow]
+  api:
+    build: .
+    image: sentinel-dd:2.0.0
+    env_file: [.env]
+    environment:
+      SENTINEL_ENV: prod
+      SENTINEL_DATABASE_URL: postgresql+psycopg://sentinel:${POSTGRES_PASSWORD}@postgres:5432/sentinel
+      SENTINEL_CHECKPOINT_URL: postgresql://sentinel:${POSTGRES_PASSWORD}@postgres:5432/sentinel
+      SENTINEL_DATA_DIR: /data
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: {condition: service_healthy}
+    volumes: [sentinel-data:/data]           # raw-source store (content-addressed) + model registry
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:v2.54.1
+    profiles: [observability]
     volumes: [./infra/prometheus.yml:/etc/prometheus/prometheus.yml:ro]
     ports: ["9090:9090"]
 
 volumes:
-  sentinel-var: {}
-  qdrant-data: {}
   pg-data: {}
-  mlflow-data: {}
+  sentinel-data: {}

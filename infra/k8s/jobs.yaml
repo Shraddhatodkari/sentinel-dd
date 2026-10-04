@@ -1,0 +1,47 @@
+# Schema migration (run before each rollout, e.g. as a Helm/Argo pre-sync hook) and scheduled watch-list refresh.
+apiVersion: batch/v1
+kind: Job
+metadata: {name: sentinel-migrate}
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext: {runAsNonRoot: true, runAsUser: 10001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: migrate
+          image: ghcr.io/your-org/sentinel-dd:2.0.0
+          args: [db, upgrade]
+          envFrom: [{configMapRef: {name: sentinel-config}}, {secretRef: {name: sentinel-secrets}}]
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: sentinel-watchlist-refresh}
+spec:
+  schedule: "17 */6 * * *"          # every 6 h; the freshness SLA (36 h) tolerates several failed runs
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext: {runAsNonRoot: true, runAsUser: 10001, fsGroup: 10001, seccompProfile: {type: RuntimeDefault}}
+          containers:
+            - name: refresh
+              image: ghcr.io/your-org/sentinel-dd:2.0.0
+              args: [sources, refresh, --all]
+              envFrom: [{configMapRef: {name: sentinel-config}}, {secretRef: {name: sentinel-secrets}}]
+              volumeMounts: [{name: data, mountPath: /data}, {name: tmp, mountPath: /tmp}]
+              securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumes:
+            - {name: data, persistentVolumeClaim: {claimName: sentinel-data}}
+            - {name: tmp, emptyDir: {}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: sentinel-data}
+spec:
+  accessModes: [ReadWriteMany]       # raw-source store + model registry shared by API pods and jobs
+  resources: {requests: {storage: 20Gi}}

@@ -4,19 +4,26 @@ metadata: {name: sentinel-config}
 data:
   SENTINEL_ENV: prod
   SENTINEL_LOG_LEVEL: INFO
-  SENTINEL_LLM_PROVIDER: anthropic
-  SENTINEL_LLM_FALLBACKS: '["bedrock"]'
-  SENTINEL_VECTOR_BACKEND: qdrant
-  SENTINEL_QDRANT_URL: http://qdrant:6333
-  SENTINEL_HITL_RISK_THRESHOLD: "0.6"
-  SENTINEL_GROUNDING_THRESHOLD: "0.35"
+  SENTINEL_DATA_DIR: /data
+  SENTINEL_MIGRATE_ON_START: "false"     # migrations run in the sentinel-migrate Job
+  SENTINEL_RUNNER_MODE: background
+  SENTINEL_RUNNER_WORKERS: "2"
+  SENTINEL_LLM_PROVIDER: extractive          # set to anthropic (and add the key to the Secret) to enable Claude
+  SENTINEL_LLM_FALLBACKS: '[]'
+  SENTINEL_GROUNDING_THRESHOLD: "0.6"
+  SENTINEL_SCREENING_REVIEW_THRESHOLD: "0.88"
+  SENTINEL_AUTO_CLEAR_ENABLED: "false"
   SENTINEL_RATE_LIMIT_PER_MINUTE: "120"
+  SENTINEL_SANCTIONS_MAX_AGE_H: "36"
 ---
-# Template only — never commit real values. Populate via External Secrets Operator.
+# Template only — never commit real values. Populate from a secret manager (e.g. External Secrets Operator).
 apiVersion: v1
 kind: Secret
 metadata: {name: sentinel-secrets}
 type: Opaque
 stringData:
-  SENTINEL_ANTHROPIC_API_KEY: "<from-secret-manager>"
   SENTINEL_JWT_SECRET: "<from-secret-manager>"
+  SENTINEL_DATABASE_URL: "postgresql+psycopg://sentinel:<password>@<postgres-host>:5432/sentinel"
+  SENTINEL_CHECKPOINT_URL: "postgresql://sentinel:<password>@<postgres-host>:5432/sentinel"
+  SENTINEL_SEC_USER_AGENT: "<YourOrg compliance-research contact@yourorg>"
+  SENTINEL_ANTHROPIC_API_KEY: ""

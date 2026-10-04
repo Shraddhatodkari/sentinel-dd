@@ -3,27 +3,44 @@ name: CI
 on:
   push: {branches: [main]}
   pull_request:
-  schedule: [{cron: "0 3 * * 1"}]   # weekly drift + dependency audit
+  schedule: [{cron: "23 4 * * 1"}]   # weekly: dependency audit + live source smoke test
 
 permissions: {contents: read}
 
 concurrency: {group: "${{ github.workflow }}-${{ github.ref }}", cancel-in-progress: true}
 
 jobs:
-  quality:
+  backend-quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12", cache: pip}
       - run: pip install -e ".[dev]"
-      - name: Lint
-        run: ruff check src tests && ruff format --check src tests
+      - name: Lint & format
+        run: ruff check src tests scripts && ruff format --check src tests scripts
       - name: Type-check
         run: mypy src
 
+  dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22", cache: npm, cache-dependency-path: dashboard/package-lock.json}
+      - run: npm ci --no-audit --no-fund
+        working-directory: dashboard
+      - name: Type-check & production build
+        run: npm run build
+        working-directory: dashboard
+      - name: npm audit (production dependencies)
+        run: npm audit --omit=dev --audit-level=high
+        working-directory: dashboard
+      - uses: actions/upload-artifact@v4
+        with: {name: dashboard-dist, path: dashboard/dist}
+
   test:
-    needs: quality
+    needs: [backend-quality, dashboard]
     runs-on: ubuntu-latest
     strategy:
       matrix: {python-version: ["3.11", "3.12", "3.13"]}
@@ -31,28 +48,30 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "${{ matrix.python-version }}", cache: pip}
+      - uses: actions/download-artifact@v4
+        with: {name: dashboard-dist, path: dashboard/dist}
       - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
-      - run: pip install -e ".[dev]"
-      - name: Unit + integration + e2e tests (coverage gate 80%)
+      - run: pip install -e ".[dev]" playwright
+      - run: python -m playwright install --with-deps chromium
+      - name: Unit, integration, API and browser e2e tests (offline, recorded real data; coverage gate 80%)
         run: pytest --cov=sentinel --cov-report=xml --cov-report=term
       - uses: actions/upload-artifact@v4
         if: matrix.python-version == '3.12'
         with: {name: coverage, path: coverage.xml}
 
   eval-gate:
-    needs: test
+    needs: backend-quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12", cache: pip}
       - run: pip install -e .
-      - name: Train, quality-gate and register champion model
-        run: python -m sentinel.ml.train --model-dir var/models
-      - name: RAG / agent / prompt-injection evaluation gates
-        run: python scripts/evaluate.py
-      - name: Drift check
-        run: python scripts/drift_check.py --model-dir var/models || [ $? -eq 2 ]
+      - name: Offline evaluation gates (screening recall/FPR, media roles, retrieval, routing, grounding, injection)
+        run: sentinel eval > eval-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: eval-report, path: eval-report.json}
 
   security:
     runs-on: ubuntu-latest
@@ -60,23 +79,45 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
-      - run: pip install bandit pip-audit && pip install -e .
+      - run: pip install -e ".[dev]"
       - name: SAST (bandit)
         run: bandit -r src -ll -q
       - name: Dependency vulnerabilities (pip-audit)
-        run: pip-audit --progress-spinner off || true   # report-only; triage in SECURITY.md process
+        run: pip-audit --progress-spinner off --skip-editable
       - name: Secret scan (gitleaks)
         uses: gitleaks/gitleaks-action@v2
         env: {GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"}
 
+  live-smoke:
+    # Real sources change; this scheduled job detects upstream format changes. Not a merge gate.
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    env:
+      SENTINEL_SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+      SENTINEL_DATA_DIR: var
+      SENTINEL_RUNNER_MODE: inline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e ".[dev]"
+      - run: sentinel db upgrade && sentinel sources refresh --all
+      - run: pytest -m live -q
+
   docker:
-    needs: [test, eval-gate]
+    needs: [test, eval-gate, security]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
         with: {context: ., push: false, tags: "sentinel-dd:${{ github.sha }}", load: true}
+      - name: Container smoke test (migrations + health)
+        run: |
+          docker run -d --name s -p 8000:8000 -e SENTINEL_ENV=dev sentinel-dd:${{ github.sha }}
+          for i in $(seq 1 30); do curl -fsS localhost:8000/health && break; sleep 2; done
+          curl -fsS localhost:8000/ready || true
+          docker logs s
       - name: Container vulnerability scan (Trivy)
         uses: aquasecurity/trivy-action@0.28.0
-        with: {image-ref: "sentinel-dd:${{ github.sha }}", severity: "CRITICAL,HIGH", exit-code: "0"}
+        with: {image-ref: "sentinel-dd:${{ github.sha }}", severity: "CRITICAL,HIGH", exit-code: "1", ignore-unfixed: true}
