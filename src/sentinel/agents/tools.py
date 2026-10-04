@@ -1,44 +1,52 @@
-"""Single source of truth for agent tools.
+"""Single source of truth for agent-callable tools, with per-tool authorisation.
 
-Each :class:`ToolSpec` (name, description, pydantic input schema, callable) is exposed — without
-duplication — through: the MCP server, Claude native tool-use, CrewAI tools and AutoGen functions.
+Each :class:`ToolSpec` declares the permission it requires. Every invocation is executed *as a principal*:
+the MCP server, the Claude tool-use agent and the CrewAI/AutoGen adapters all go through ``invoke`` — tools
+cannot be used to bypass RBAC, case scoping or maker-checker.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
+from sentinel.security.auth import Permission, Principal
+
 if TYPE_CHECKING:
     from sentinel.agents.service import CaseService
-    from sentinel.container import Container
 
 
-class SearchInput(BaseModel):
-    query: str = Field(description="Natural-language question about a counter-party")
-    entity: str | None = Field(None, description="Restrict search to this entity's documents")
-    k: int = Field(5, ge=1, le=20)
+class ToolDenied(Exception):
+    pass
 
 
-class EntityInput(BaseModel):
-    entity: str = Field(description="Legal name of the company or person")
+class CaseSearchInput(BaseModel):
+    case_id: str = Field(description="Case to search (results are limited to that case's evidence)")
+    query: str = Field(min_length=3, max_length=500)
+    k: int = Field(5, ge=1, le=10)
 
 
-class GraphInput(BaseModel):
-    entity: str
-    hops: int = Field(2, ge=1, le=4)
-
-
-class CaseInput(BaseModel):
-    entity: str
-    question: str = ""
+class ScreenInput(BaseModel):
+    name: str = Field(min_length=2, max_length=300, description="Person or organisation name")
+    entity_type: str | None = Field(None, description="individual | entity")
 
 
 class CaseIdInput(BaseModel):
     case_id: str
+
+
+class StartInput(BaseModel):
+    query: str = Field(min_length=2, max_length=300)
+    cik: int | None = None
+    lei: str | None = Field(None, pattern=r"^[A-Z0-9]{20}$")
+    question: str = Field("", max_length=1000)
+
+
+class EmptyInput(BaseModel):
+    pass
 
 
 @dataclass
@@ -46,13 +54,20 @@ class ToolSpec:
     name: str
     description: str
     input_model: type[BaseModel]
-    fn: Callable[[Any], Any]
+    permission: Permission
+    fn: Callable[[Principal, Any], Any]
+    mutating: bool = False
 
     def json_schema(self) -> dict[str, Any]:
         return self.input_model.model_json_schema()
 
-    def invoke(self, args: dict[str, Any]) -> Any:
-        return self.fn(self.input_model.model_validate(args))
+    def invoke(self, principal: Principal, args: dict[str, Any]) -> Any:
+        allowed = principal.can(self.permission) or (
+            self.permission == Permission.CASE_READ_OWN and principal.can(Permission.CASE_READ_ALL)
+        )
+        if not allowed:
+            raise ToolDenied(f"{principal.subject} lacks {self.permission.value} for tool {self.name}")
+        return self.fn(principal, self.input_model.model_validate(args))
 
     def anthropic_spec(self) -> dict[str, Any]:
         return {"name": self.name, "description": self.description, "input_schema": self.json_schema()}
@@ -64,63 +79,87 @@ class ToolSpec:
         }
 
 
-def build_tools(c: Container, service: CaseService | None = None) -> dict[str, ToolSpec]:
-    def search(a: SearchInput) -> dict[str, Any]:
-        ev = c.qa.answer(a.query, k=a.k, flt={"entity": a.entity} if a.entity else None)
+def build_tools(service: CaseService) -> dict[str, ToolSpec]:
+    c = service.c
+
+    def search(p: Principal, a: CaseSearchInput) -> dict[str, Any]:
+        service.get(p, a.case_id)  # enforces case visibility (raises CaseNotFound)
+        from sentinel.rag.qa import GroundedQA
+
+        ev = GroundedQA(c.case_index.retriever(a.case_id), c.llm, c.guardrails, c.grounding).answer(a.query, k=a.k)
         return {"answer": ev.answer, "citations": ev.citations, "grounding_score": round(ev.grounding_score, 3)}
 
-    def screen(a: EntityInput) -> list[dict[str, Any]]:
-        return [asdict(h) for h in c.screener.screen(a.entity)]
+    def screen(p: Principal, a: ScreenInput) -> list[dict[str, Any]]:
+        hits = c.screening.screen(a.name, "adhoc", a.entity_type, c.settings.screening_review_threshold)
+        c.audit.append(
+            p.subject, "screening.adhoc", "name", a.name[:120], {"hits": len(hits)}, roles=p.role_names, tenant=p.tenant
+        )
+        return [{k: v for k, v in h.to_dict().items() if k != "remarks"} for h in hits[:20]]
 
-    def graph(a: GraphInput) -> dict[str, Any]:
+    def get_case(p: Principal, a: CaseIdInput) -> dict[str, Any]:
+        d = service.get(p, a.case_id)
         return {
-            "facts": c.graph.facts_for(a.entity, a.hops),
-            "ultimate_owners": c.graph.ultimate_owners(a.entity),
-            "offshore_layers": c.graph.offshore_layers(a.entity),
+            k: d.get(k)
+            for k in (
+                "case_id",
+                "status",
+                "resolved_name",
+                "risk_band",
+                "risk_score",
+                "policy_outcome",
+                "review",
+                "report",
+            )
         }
 
-    def score(a: EntityInput) -> dict[str, Any]:
-        profile = c.entities.lookup(a.entity)
-        feats = c.risk.build_features(profile, c.risk.graph_features(c.graph, a.entity), 0)
-        r = c.risk.score(a.entity, feats)
-        return {"probability": r.probability, "band": r.band, "drivers": r.drivers, "anomaly": r.anomaly}
+    def start(p: Principal, a: StartInput) -> dict[str, Any]:
+        d = service.create(p, a.query, cik=a.cik, lei=a.lei, question=a.question)
+        return {"case_id": d["case_id"], "status": d["status"]}
+
+    def queue(p: Principal, _a: EmptyInput) -> list[dict[str, Any]]:
+        return [
+            {k: r[k] for k in ("case_id", "entity", "tier", "risk_band", "requested_at", "can_decide")}
+            for r in service.review_queue(p)
+        ]
 
     tools = [
-        ToolSpec("search_documents", "Grounded, cited search over the due-diligence corpus.", SearchInput, search),
-        ToolSpec("screen_entity", "Fuzzy sanctions/PEP watch-list screening for a name.", EntityInput, screen),
         ToolSpec(
-            "entity_graph", "Ownership/officer knowledge-graph facts, UBOs and offshore layering.", GraphInput, graph
+            "search_case_evidence",
+            "Grounded, cited search over one case's evidence (filings, registry records, list records, media).",
+            CaseSearchInput,
+            Permission.SEARCH,
+            search,
         ),
         ToolSpec(
-            "score_risk",
-            "ML counter-party risk score with explanation (structured + graph features).",
-            EntityInput,
-            score,
+            "screen_name",
+            "Screen a name against current sanctions (OFAC, UN, UK, EU) and PEP lists. Returns "
+            "potential matches for human adjudication.",
+            ScreenInput,
+            Permission.SEARCH,
+            screen,
+        ),
+        ToolSpec(
+            "get_case",
+            "Fetch a case's status, risk assessment, policy outcome, review and memo.",
+            CaseIdInput,
+            Permission.CASE_READ_OWN,
+            get_case,
+        ),
+        ToolSpec(
+            "start_investigation",
+            "Open a due-diligence investigation on an entity (runs asynchronously; "
+            "outcomes always require human review per policy).",
+            StartInput,
+            Permission.CASE_CREATE,
+            start,
+            mutating=True,
+        ),
+        ToolSpec(
+            "list_review_queue",
+            "List cases awaiting human review (decisions are made in the dashboard, not by agents).",
+            EmptyInput,
+            Permission.REVIEW_DECIDE,
+            queue,
         ),
     ]
-    if service is not None:
-
-        def start_case(a: CaseInput) -> dict[str, Any]:
-            st = service.start(a.entity, a.question, requested_by="mcp-client")
-            return {
-                "case_id": st["case_id"],
-                "status": st["status"],
-                "risk": st.get("risk", {}).get("band"),
-                "approval_id": st.get("approval_id"),
-            }
-
-        def get_case(a: CaseIdInput) -> dict[str, Any]:
-            st = service.get(a.case_id)
-            return {"case_id": a.case_id, "status": st.get("status"), "report": st.get("report", "")}
-
-        tools += [
-            ToolSpec(
-                "start_due_diligence",
-                "Run the full multi-agent due-diligence workflow on an entity. "
-                "High-risk outcomes pause for human approval.",
-                CaseInput,
-                start_case,
-            ),
-            ToolSpec("get_case", "Fetch status and memo of a due-diligence case.", CaseIdInput, get_case),
-        ]
     return {t.name: t for t in tools}

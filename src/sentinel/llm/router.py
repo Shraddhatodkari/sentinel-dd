@@ -80,10 +80,10 @@ class LLMRouter(LLMClient):
 
 
 def build_client(provider: str, settings: Settings) -> LLMClient:
-    if provider == "fake":
-        from sentinel.llm.fake import FakeLLM
+    if provider == "extractive":
+        from sentinel.llm.extractive import ExtractiveLLM
 
-        return FakeLLM()
+        return ExtractiveLLM()
     if provider == "anthropic":
         from sentinel.llm.anthropic_client import AnthropicClient
 

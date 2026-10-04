@@ -7,9 +7,10 @@ import json
 from typing import Any
 
 from sentinel.agents.tools import ToolSpec
+from sentinel.security.auth import Principal
 
 
-def build_autogen_pair(specs: dict[str, ToolSpec], llm_config: dict[str, Any]) -> tuple[Any, Any]:
+def build_autogen_pair(specs: dict[str, ToolSpec], principal: Principal, llm_config: dict[str, Any]) -> tuple[Any, Any]:
     import autogen
 
     assistant = autogen.AssistantAgent(
@@ -23,7 +24,7 @@ def build_autogen_pair(specs: dict[str, ToolSpec], llm_config: dict[str, Any]) -
     for spec in specs.values():
 
         def _fn(_spec: ToolSpec = spec, **kwargs: Any) -> str:
-            return json.dumps(_spec.invoke(kwargs), default=str)
+            return json.dumps(_spec.invoke(principal, kwargs), default=str)
 
         executor.register_function(function_map={spec.name: _fn})
     return assistant, executor

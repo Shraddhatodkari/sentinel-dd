@@ -1,8 +1,8 @@
 """CrewAI integration: the same Sentinel tools driven by a role-based CrewAI crew.
 
 Useful when a client standardises on CrewAI. Install with ``pip install sentinel-dd[crews]``.
-The LangGraph workflow remains the governed system of record; this crew is an alternative
-exploratory front-end and never bypasses the HITL policy (it has no approval tool).
+The LangGraph workflow remains the governed system of record; this crew is an optional research front-end.
+Tools execute *as the supplied principal* (RBAC enforced) and there is no approval tool.
 """
 
 from __future__ import annotations
@@ -10,9 +10,10 @@ from __future__ import annotations
 from typing import Any
 
 from sentinel.agents.tools import ToolSpec
+from sentinel.security.auth import Principal
 
 
-def to_crewai_tools(specs: dict[str, ToolSpec]) -> list[Any]:
+def to_crewai_tools(specs: dict[str, ToolSpec], principal: Principal) -> list[Any]:
     from crewai.tools import BaseTool
 
     tools = []
@@ -21,7 +22,7 @@ def to_crewai_tools(specs: dict[str, ToolSpec]) -> list[Any]:
         def _run(self: Any, _spec: ToolSpec = spec, **kwargs: Any) -> str:
             import json
 
-            return json.dumps(_spec.invoke(kwargs), default=str)
+            return json.dumps(_spec.invoke(principal, kwargs), default=str)
 
         cls = type(
             f"{spec.name.title().replace('_', '')}Tool",
@@ -38,10 +39,12 @@ def to_crewai_tools(specs: dict[str, ToolSpec]) -> list[Any]:
     return tools
 
 
-def build_crew(specs: dict[str, ToolSpec], entity: str, llm: str = "anthropic/claude-sonnet-4-5") -> Any:
+def build_crew(
+    specs: dict[str, ToolSpec], principal: Principal, entity: str, llm: str = "anthropic/claude-sonnet-4-5"
+) -> Any:
     from crewai import Agent, Crew, Process, Task
 
-    tools = to_crewai_tools({k: v for k, v in specs.items() if k != "start_due_diligence"})
+    tools = to_crewai_tools({k: v for k, v in specs.items() if not v.mutating}, principal)
     researcher = Agent(
         role="Due-Diligence Researcher",
         goal=f"Collect cited facts about {entity}",

@@ -1,13 +1,17 @@
-"""API request/response contracts (OpenAPI is generated from these)."""
+"""API request/response contracts (OpenAPI is generated from these). Inputs are strictly validated."""
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class TokenRequest(BaseModel):
+class Strict(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+
+class LoginRequest(Strict):
     username: str = Field(min_length=1, max_length=64)
     password: str = Field(min_length=1, max_length=256)
 
@@ -15,57 +19,39 @@ class TokenRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    expires_at: int
+    username: str
+    display_name: str
     roles: list[str]
+    permissions: list[str]
+    tenant: str
 
 
-class CaseCreate(BaseModel):
-    entity: str = Field(min_length=2, max_length=200, examples=["Helios Trade FZE"])
-    question: str = Field("", max_length=2000)
+class CaseCreate(Strict):
+    query: str = Field(min_length=2, max_length=300, examples=["Apple Inc."])
+    cik: int | None = Field(None, ge=1, le=9_999_999_999)
+    lei: str | None = Field(None, pattern=r"^[A-Z0-9]{20}$")
+    ticker: str | None = Field(None, pattern=r"^[A-Za-z.\-]{1,10}$")
+    question: str = Field("", max_length=1000)
 
 
-class CaseSummary(BaseModel):
-    case_id: str
-    entity: str | None
-    status: str | None
-    risk_band: str | None = None
-
-
-class CaseDetail(BaseModel):
-    case_id: str
-    entity: str
-    status: str
-    awaiting_human: bool
-    approval_id: str | None = None
-    risk: dict[str, Any] = Field(default_factory=dict)
-    policy: dict[str, Any] = Field(default_factory=dict)
-    screening: list[dict[str, Any]] = Field(default_factory=list)
-    graph_findings: dict[str, Any] = Field(default_factory=dict)
-    report: str = ""
-    report_grounding: float = 0.0
-    trace: list[dict[str, Any]] = Field(default_factory=list)
-    errors: list[str] = Field(default_factory=list)
-
-
-class Decision(BaseModel):
+class Decision(Strict):
     approve: bool
-    comment: str | None = Field(None, max_length=2000)
+    comment: str = Field(min_length=10, max_length=4000)
 
 
-class SearchRequest(BaseModel):
-    query: str = Field(min_length=2, max_length=2000)
-    entity: str | None = None
-    k: int = Field(5, ge=1, le=20)
+class ScreenRequest(Strict):
+    name: str = Field(min_length=2, max_length=300)
+    entity_type: Literal["individual", "entity"] | None = None
 
 
-class SearchResponse(BaseModel):
-    answer: str
-    citations: list[str]
-    grounding_score: float
-    flagged_injection: bool
+class UserCreate(Strict):
+    username: str = Field(min_length=3, max_length=64)
+    password: str = Field(min_length=12, max_length=256)
+    roles: list[Literal["analyst", "reviewer", "senior_reviewer", "auditor", "admin"]] = Field(min_length=1)
+    display_name: str = Field("", max_length=128)
 
 
-class IngestRequest(BaseModel):
-    id: str = Field(pattern=r"^[a-z0-9_\-]{2,64}$")
-    title: str
-    text: str = Field(min_length=1, max_length=2_000_000)
-    metadata: dict[str, Any] = Field(default_factory=dict)
+class CaseList(BaseModel):
+    total: int
+    items: list[dict[str, Any]]

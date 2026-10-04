@@ -1,24 +1,51 @@
-"""Live demo of the native Claude tool-use agent (requires SENTINEL_ANTHROPIC_API_KEY)."""
+"""Run the native Claude tool-use agent against Sentinel's governed tools (requires SENTINEL_ANTHROPIC_API_KEY).
+
+The agent acts *as* an existing Sentinel user: every tool call is authorised against that user's RBAC permissions,
+inputs pass the prompt-injection guardrails, and each call is written to the audit log. The agent can open and read
+investigations over real sources; it has no tool that records a review decision.
+
+    python scripts/claude_agent.py --as alice "Investigate The Boeing Company and summarise the policy outcome"
+"""
 
 from __future__ import annotations
 
+import argparse
+import json
 import os
-
-import anthropic
+import sys
 
 from sentinel.agents.claude_agent import ClaudeToolAgent
+from sentinel.agents.service import CaseService
 from sentinel.agents.tools import build_tools
 from sentinel.container import Container
+from sentinel.security.users import UserService
 
 
-def main() -> None:
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("prompt")
+    ap.add_argument("--as", dest="as_user", required=True)
+    args = ap.parse_args()
+    key = os.environ.get("SENTINEL_ANTHROPIC_API_KEY")
+    if not key:
+        print("error: SENTINEL_ANTHROPIC_API_KEY is not set", file=sys.stderr)
+        return 2
+    import anthropic
+
     c = Container.build()
-    client = anthropic.Anthropic(api_key=os.environ["SENTINEL_ANTHROPIC_API_KEY"])
-    agent = ClaudeToolAgent(client, c.settings.anthropic_model, build_tools(c), c.guardrails, c.audit)
-    run = agent.run("Assess Helios Trade FZE for onboarding as a components supplier. Who is the UBO?")
+    c.settings.runner_mode = "inline"
+    principal = UserService(c.db).get_principal(args.as_user)
+    if principal is None:
+        print("error: unknown user", file=sys.stderr)
+        return 2
+    agent = ClaudeToolAgent(
+        anthropic.Anthropic(api_key=key), c.settings.anthropic_model, build_tools(CaseService(c)), c.guardrails, c.audit
+    )
+    run = agent.run(args.prompt, principal)
     print(run.answer)
-    print("tools used:", [t["tool"] for t in run.tool_calls])
+    print(json.dumps({"tool_calls": run.tool_calls, "stopped": run.stopped_reason}, indent=2, default=str))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

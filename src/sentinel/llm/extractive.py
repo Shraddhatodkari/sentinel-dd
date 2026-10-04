@@ -1,4 +1,7 @@
-"""Deterministic, offline LLM used in tests, CI and air-gapped demos.
+"""Extractive (no-generation) language backend for offline / air-gapped operation and deterministic testing.
+
+It never composes new facts: answers are verbatim sentences selected from the supplied CONTEXT, each with its
+citation tag. Use it when no LLM provider is approved, or as the last-resort fallback in ``LLMRouter``.
 
 Behaviour:
 * If the system prompt asks for JSON (structured output), it synthesises a schema-valid instance
@@ -55,9 +58,9 @@ def _instance_from_schema(schema: dict[str, Any], defs: dict[str, Any]) -> Any:
     return None
 
 
-class FakeLLM(LLMClient):
-    provider = "fake"
-    model = "fake-extractive-1"
+class ExtractiveLLM(LLMClient):
+    provider = "extractive"
+    model = "extractive-v1"
 
     def __init__(self, scripted: dict[str, Callable[[list[Message]], Any]] | None = None, max_sentences: int = 3):
         self.scripted = scripted or {}

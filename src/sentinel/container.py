@@ -1,156 +1,178 @@
 """Composition root / dependency-injection container.
 
-All infrastructure is wired here from :class:`Settings`, so every layer depends only on
-interfaces and tests can swap any component (LLM, vector DB, model bundle) in one place.
+All infrastructure is wired here from :class:`Settings`, so every layer depends only on interfaces and tests can
+substitute any component (HTTP transport, LLM, database) in one place.
 """
 
 from __future__ import annotations
 
-import os
+import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
+
+import httpx
+from sqlalchemy import select
 
 from sentinel.config import Settings, get_settings
+from sentinel.db.base import Database
+from sentinel.db.models import RevokedToken
 from sentinel.embeddings.base import Embedder, build_embedder
-from sentinel.governance.hitl import ApprovalQueue
 from sentinel.governance.policy import PolicyEngine
-from sentinel.graphrag.graph import KnowledgeGraph
-from sentinel.ingestion.loaders import load_directory
-from sentinel.ingestion.pipeline import IngestionPipeline
+from sentinel.ingestion.reference import ReferenceDataService, sync_source_catalog
+from sentinel.investigation.resolution import EntityResolver
 from sentinel.llm.base import LLMClient
+from sentinel.llm.metering import MeteredLLM
 from sentinel.llm.router import build_llm
-from sentinel.memory.memory import LongTermMemory
-from sentinel.ml.models import TrainedBundle, train_all
 from sentinel.ml.registry import ModelRegistry, RegistryError
-from sentinel.ml.scoring import RiskEngine
 from sentinel.observability.logging import get_logger, log_event
-from sentinel.rag.bm25 import BM25Index
+from sentinel.rag.case_index import CaseIndex
 from sentinel.rag.grounding import GroundingChecker
-from sentinel.rag.qa import GroundedQA
-from sentinel.rag.retriever import HybridRetriever
-from sentinel.screening import Screener
+from sentinel.risk.peer_model import MODEL_NAME, PeerAnomalyModel
+from sentinel.screening import ScreeningIndex
 from sentinel.security.audit import AuditLog
 from sentinel.security.auth import TokenService
 from sentinel.security.dlp import DLPEngine
 from sentinel.security.guardrails import Guardrails
-from sentinel.structured import EntityRegistry
-from sentinel.vectorstore.base import InMemoryVectorStore, VectorStore
+from sentinel.sources.edgar import EdgarConnector
+from sentinel.sources.fetcher import SourceFetcher
+from sentinel.sources.gleif import GleifConnector
+from sentinel.sources.http import ResilientHttpClient
+from sentinel.sources.media import DojConnector, GdeltConnector
+from sentinel.sources.raw_store import RawStore
+from sentinel.timeutil import utcnow
 
 log = get_logger(__name__)
-
-
-def _data_dir() -> Path:
-    """Repo checkout -> ./data next to src/; installed wheel/container -> $SENTINEL_DATA_DIR or ./data."""
-    env = os.environ.get("SENTINEL_DATA_DIR")
-    if env:
-        return Path(env)
-    repo = Path(__file__).resolve().parents[2] / "data"
-    return repo if repo.exists() else Path.cwd() / "data"
-
-
-DATA_DIR = _data_dir()
-
-
-def build_vector_store(settings: Settings, dim: int) -> VectorStore:
-    if settings.vector_backend == "qdrant":  # pragma: no cover - needs running Qdrant
-        from sentinel.vectorstore.qdrant_store import QdrantVectorStore
-
-        return QdrantVectorStore(settings.qdrant_url, "sentinel_chunks", dim)
-    if settings.vector_backend == "pgvector":  # pragma: no cover - needs running Postgres
-        from sentinel.vectorstore.pgvector_store import PgVectorStore
-
-        return PgVectorStore(settings.postgres_dsn, dim)
-    return InMemoryVectorStore(dim)
-
-
-def load_or_train_bundle(settings: Settings, n: int = 4000) -> tuple[TrainedBundle, str]:
-    reg = ModelRegistry(settings.model_dir, settings.mlflow_tracking_uri)
-    try:
-        payload, meta = reg.load("risk_bundle", stage="production")
-        return payload["bundle"], f"risk_bundle:v{meta['version']}"
-    except RegistryError:
-        log_event(log, "no_production_model_training_fallback")
-        bundle, _ = train_all(n)
-        return bundle, "risk_bundle:ephemeral"
 
 
 @dataclass
 class Container:
     settings: Settings
-    llm: LLMClient
+    db: Database
+    http: ResilientHttpClient
+    fetcher: SourceFetcher
+    edgar: EdgarConnector
+    gleif: GleifConnector
+    doj: DojConnector
+    gdelt: GdeltConnector | None
+    resolver: EntityResolver
+    screening: ScreeningIndex
+    reference: ReferenceDataService
     embedder: Embedder
-    store: VectorStore
-    bm25: BM25Index
-    graph: KnowledgeGraph
+    case_index: CaseIndex
+    llm: LLMClient
     dlp: DLPEngine
     guardrails: Guardrails
-    retriever: HybridRetriever
-    qa: GroundedQA
-    ingestion: IngestionPipeline
-    screener: Screener
-    entities: EntityRegistry
-    risk: RiskEngine
+    grounding: GroundingChecker
     policy: PolicyEngine
     audit: AuditLog
-    approvals: ApprovalQueue
-    memory: LongTermMemory
     tokens: TokenService
-    extras: dict[str, object] = field(default_factory=dict)
+    registry: ModelRegistry
+    checkpointer: Any
+    peer_model: PeerAnomalyModel | None = None
+    peer_model_version: str | None = None
+    extras: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def build(
         cls,
         settings: Settings | None = None,
         *,
+        transport: httpx.BaseTransport | None = None,
         llm: LLMClient | None = None,
-        bundle: TrainedBundle | None = None,
-        bootstrap_data: bool = True,
-        audit_path: str | None = None,
+        migrate: bool | None = None,
     ) -> Container:
         s = settings or get_settings()
-        llm = llm or build_llm(s)
-        embedder = build_embedder(s.embedding_backend, s.embedding_dim)
-        store = build_vector_store(s, embedder.dim)
-        bm25 = BM25Index()
-        graph = KnowledgeGraph()
-        dlp = DLPEngine(secret=s.jwt_secret.get_secret_value())
-        guard = Guardrails(dlp)
-        retriever = HybridRetriever(embedder, store, bm25)
-        qa = GroundedQA(retriever, llm, guard, GroundingChecker())
-        ingestion = IngestionPipeline(
-            embedder, store, bm25, graph, dlp, chunk_size=s.chunk_size, overlap=s.chunk_overlap
+        problems = s.validate_for_production()
+        if problems:
+            raise RuntimeError("refusing to start with insecure production configuration: " + "; ".join(problems))
+        s.data_dir.mkdir(parents=True, exist_ok=True)
+        db = Database(s.database_url, echo=s.db_echo)
+        if s.migrate_on_start if migrate is None else migrate:
+            db.upgrade()
+        sync_source_catalog(db, s.enable_opensanctions_peps)
+        http = ResilientHttpClient(
+            s.sec_user_agent,
+            s.http_timeout_s,
+            s.http_max_retries,
+            transport=transport,
+            backoff_base_s=s.http_backoff_base_s,
+            rate_limits_enabled=s.http_rate_limits_enabled,
         )
-        if bundle is None:
-            bundle, version = load_or_train_bundle(s)
-        else:
-            version = "risk_bundle:injected"
-        audit = AuditLog(audit_path)
+        fetcher = SourceFetcher(db, http, RawStore(s.raw_store_dir), s.source_cache_ttl_s)
+        edgar, gleif = EdgarConnector(fetcher), GleifConnector(fetcher)
+        embedder = build_embedder(s.embedding_backend, s.embedding_dim)
+        dlp = DLPEngine(secret=s.jwt_secret.get_secret_value())
+
+        def is_revoked(jti: str) -> bool:
+            with db.session() as sess:
+                return sess.get(RevokedToken, jti) is not None
+
+        registry = ModelRegistry(s.model_dir)
         c = cls(
             settings=s,
-            llm=llm,
+            db=db,
+            http=http,
+            fetcher=fetcher,
+            edgar=edgar,
+            gleif=gleif,
+            doj=DojConnector(fetcher),
+            gdelt=GdeltConnector(fetcher) if s.enable_gdelt else None,
+            resolver=EntityResolver(db, edgar, gleif),
+            screening=ScreeningIndex(db),
+            reference=ReferenceDataService(db, fetcher),
             embedder=embedder,
-            store=store,
-            bm25=bm25,
-            graph=graph,
+            case_index=CaseIndex(db, embedder, s.chunk_size, s.chunk_overlap),
+            llm=MeteredLLM(llm or build_llm(s), db, s.llm_price_per_mtok),
             dlp=dlp,
-            guardrails=guard,
-            retriever=retriever,
-            qa=qa,
-            ingestion=ingestion,
-            screener=Screener.from_json(DATA_DIR / "watchlist.json"),
-            entities=EntityRegistry.from_json(DATA_DIR / "entity_registry.json"),
-            risk=RiskEngine(bundle, version),
-            policy=PolicyEngine(s.hitl_risk_threshold, s.grounding_threshold),
-            audit=audit,
-            approvals=ApprovalQueue(audit),
-            memory=LongTermMemory(embedder),
-            tokens=TokenService(s.jwt_secret.get_secret_value(), s.jwt_algorithm, s.jwt_ttl_minutes),
+            guardrails=Guardrails(dlp),
+            grounding=GroundingChecker(s.grounding_threshold),
+            policy=PolicyEngine(s.policy_version, s.auto_clear_enabled, min_grounding=s.grounding_threshold),
+            audit=AuditLog(db),
+            tokens=TokenService(
+                s.jwt_secret.get_secret_value(), s.jwt_algorithm, s.jwt_ttl_minutes, s.jwt_issuer, is_revoked
+            ),
+            registry=registry,
+            checkpointer=build_checkpointer(s.checkpoint_url),
         )
-        if bootstrap_data:
-            c.ingest_directory(DATA_DIR / "sample_docs")
+        c.reload_peer_model()
         return c
 
-    def ingest_directory(self, path: str | Path) -> dict[str, object]:
-        rep = self.ingestion.ingest(list(load_directory(path)))
-        self.retriever.known_entities = sorted(self.ingestion.entities | set(self.entities.names()))
-        return rep.__dict__
+    def reload_peer_model(self) -> None:
+        try:
+            model, meta = self.registry.load(MODEL_NAME, stage="production")
+            self.peer_model, self.peer_model_version = model, f"{MODEL_NAME}:v{meta['version']}"
+        except RegistryError:
+            self.peer_model, self.peer_model_version = None, None
+            log_event(log, "peer_model_unavailable", detail="train with `sentinel ml train`")
+
+    def revoke_token(self, jti: str, subject: str, expires_at: int) -> None:
+        from datetime import UTC, datetime
+
+        with self.db.session() as sess:
+            if sess.get(RevokedToken, jti) is None:
+                sess.add(RevokedToken(jti=jti, subject=subject, expires_at=datetime.fromtimestamp(expires_at, UTC)))
+
+    def purge_expired_revocations(self) -> int:
+        with self.db.session() as sess:
+            rows = list(sess.scalars(select(RevokedToken).where(RevokedToken.expires_at < utcnow())))
+            for r in rows:
+                sess.delete(r)
+            return len(rows)
+
+
+def build_checkpointer(url: str) -> Any:
+    """LangGraph checkpointer: SQLite file (single node) or PostgreSQL (multi-replica) for durable HITL pauses."""
+    if url.startswith(("postgres://", "postgresql://")):  # pragma: no cover - requires a PostgreSQL server
+        from langgraph.checkpoint.postgres import PostgresSaver
+        from psycopg import Connection
+
+        conn = Connection.connect(url, autocommit=True, prepare_threshold=0)
+        saver = PostgresSaver(conn)
+        saver.setup()
+        return saver
+    from langgraph.checkpoint.sqlite import SqliteSaver
+
+    if url != ":memory:":
+        Path(url).parent.mkdir(parents=True, exist_ok=True)
+    return SqliteSaver(sqlite3.connect(url, check_same_thread=False))

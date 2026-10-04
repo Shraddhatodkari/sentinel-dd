@@ -12,11 +12,13 @@ from typing import Any
 
 from sentinel.agents.tools import ToolSpec
 from sentinel.security.audit import AuditLog
+from sentinel.security.auth import Principal
 from sentinel.security.guardrails import Guardrails
 
 SYSTEM = (
-    "You are Sentinel, an AI due-diligence analyst. Use the tools to gather evidence. Cite sources exactly as "
-    "returned by tools. Never recommend onboarding an entity with a sanctions match; escalate to a human instead."
+    "You are Sentinel, an AI due-diligence research assistant. Use the tools to gather evidence and cite sources "
+    "exactly as returned by tools. Never state facts that no tool returned. You cannot approve or reject cases — "
+    "decisions are made by authorised human reviewers. Screening results are potential matches, not determinations."
 )
 
 
@@ -35,7 +37,7 @@ class ClaudeToolAgent:
         model: str,
         tools: dict[str, ToolSpec],
         guardrails: Guardrails,
-        audit: AuditLog | None = None,
+        audit: AuditLog,
         max_turns: int = 8,
         max_tokens: int = 1024,
     ) -> None:
@@ -43,11 +45,13 @@ class ClaudeToolAgent:
         self.model = model
         self.tools = tools
         self.guardrails = guardrails
-        self.audit = audit or AuditLog()
+        self.audit = audit
         self.max_turns = max_turns
         self.max_tokens = max_tokens
 
-    def run(self, user_message: str, actor: str = "user") -> AgentRun:
+    def run(self, user_message: str, principal: Principal) -> AgentRun:
+        """Run the tool-use loop *as* ``principal``: every tool call is authorised against its RBAC permissions."""
+        actor = principal.subject
         check = self.guardrails.check_input(user_message)
         if not check.allowed:
             return AgentRun(f"Request blocked by guardrails: {check.violations}", stopped_reason="guardrail")
@@ -75,13 +79,21 @@ class ClaudeToolAgent:
                 try:
                     if tool is None:
                         raise KeyError(f"unknown tool {block.name}")
-                    output = tool.invoke(block.input)
+                    output = tool.invoke(principal, block.input)
                     content, is_error = json.dumps(output, default=str)[:20_000], False
                 except Exception as exc:  # report tool errors back to the model (it can recover)
                     content, is_error = f"ERROR: {exc}", True
                 content, _ = self.guardrails.sanitize_context(content)  # indirect-injection defence
                 run.tool_calls.append({"tool": block.name, "input": block.input, "error": is_error})
-                self.audit.append(actor, "agent.tool_call", block.name, {"input": block.input, "error": is_error})
+                self.audit.append(
+                    actor,
+                    "agent.tool_call",
+                    "tool",
+                    block.name,
+                    {"input": block.input, "error": is_error},
+                    roles=principal.role_names,
+                    tenant=principal.tenant,
+                )
                 results.append(
                     {"type": "tool_result", "tool_use_id": block.id, "content": content, "is_error": is_error}
                 )
