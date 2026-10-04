@@ -1,0 +1,7 @@
+{
+ "url": "https://data.sec.gov/api/xbrl/frames/us-gaap/Assets/USD/CY2024Q4I.json",
+ "status": 200,
+ "content_type": "application/json",
+ "retrieved_at": "2026-10-04T17:03:07.181339+00:00",
+ "sha256": "73f447daa25f4228c633e6fdc0544058e04836a47a932348f6a9d1d3df3ea16f"
+}

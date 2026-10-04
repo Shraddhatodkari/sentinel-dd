@@ -1,0 +1,10 @@
+{
+ "url": "https://sanctionslist.fcdo.gov.uk/docs/UK-Sanctions-List.csv",
+ "status": 200,
+ "content_type": "text/csv",
+ "retrieved_at": "2026-10-04T16:57:53.678208+00:00",
+ "sha256": "9e2040cf593bf296b81c6e769f4c02945d92af963905df2d39532064593cd5bd",
+ "excerpt": true,
+ "full_sha256": "819d6a92c7e9a08c431f490de5ef3c24deba9cc78a04da8bb78c2a8452079725",
+ "selection": "designations naming key terms + 300 random (seed 7)"
+}

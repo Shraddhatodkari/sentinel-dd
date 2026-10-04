@@ -1,0 +1,7 @@
+{
+ "url": "https://www.justice.gov/api/v1/press_releases.json?direction=DESC&pagesize=25&parameters%5Btitle%5D=boeing&sort=date",
+ "status": 200,
+ "content_type": "application/json",
+ "retrieved_at": "2026-10-04T17:04:18.214114+00:00",
+ "sha256": "42d051145bf0626d8b3f2fb73611c5d30efdc6ed5400003aa464ebd8bc7d59a3"
+}

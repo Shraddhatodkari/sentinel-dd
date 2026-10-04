@@ -1,0 +1,10 @@
+{
+ "url": "https://www.treasury.gov/ofac/downloads/sdn.csv",
+ "status": 200,
+ "content_type": "text/csv",
+ "retrieved_at": "2026-10-04T16:57:52.039388+00:00",
+ "sha256": "7e5b11df259a6b748613cbd87379f4e43a6d4311757df7e0ed2e4449de5170b6",
+ "full_sha256": "49215a8e749832b34dbb577c83f00f4c3c1b8baf0f14a9bd91bdcf19de3a51e1",
+ "excerpt": true,
+ "selection": "rows naming ['SBERBANK', 'ROSNEFT', 'BANK MELLI', 'GAZPROMBANK', 'VTB', 'HAMAS', 'ISLAMIC REVOLUTIONARY GUARD', 'KIM JONG UN', 'WAGNER', 'AL-QAIDA', 'AL QAIDA', 'HIZBALLAH', 'HEZBOLLAH', 'ROSOBORONEXPORT', 'AEROFLOT', 'NORD STREAM', 'ALROSA', 'SOVCOMFLOT', 'TALIBAN', 'LUKOIL'] + 400 random rows (seed 7)"
+}

@@ -1,0 +1,10 @@
+{
+ "url": "https://scsanctions.un.org/resources/xml/en/consolidated.xml",
+ "status": 200,
+ "content_type": "application/xml",
+ "retrieved_at": "2026-10-04T16:57:55.252925+00:00",
+ "sha256": "b6ea7a2fcada15d04bd6033fa4a1741c86ce007eb8da394e45c3bf7ca5eb6006",
+ "excerpt": true,
+ "full_sha256": "a749134d9922094123b40e3d9479965a867fc95dbe336d96c587dd0e967ba9c7",
+ "selection": "records naming key terms + 120 random per group (seed 7)"
+}

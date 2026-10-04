@@ -1,0 +1,7 @@
+{
+ "url": "https://www.justice.gov/api/v1/press_releases.json?direction=DESC&pagesize=25&parameters%5Btitle%5D=sberbank&sort=date",
+ "status": 200,
+ "content_type": "application/json",
+ "retrieved_at": "2026-10-04T17:05:26.155013+00:00",
+ "sha256": "9af2a6844f8675043046baa621f64a13784b8b33c591bf92de8d42a81bf77aac"
+}

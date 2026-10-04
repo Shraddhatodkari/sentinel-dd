@@ -1,0 +1,10 @@
+{
+ "url": "https://webgate.ec.europa.eu/fsd/fsf/public/files/csvFullSanctionsList_1_1/content?token=dG9rZW4tMjAxNw",
+ "status": 200,
+ "content_type": "text/csv",
+ "retrieved_at": "2026-10-04T16:57:54.838334+00:00",
+ "sha256": "fc352e4bc8b351b06ac74824b520acf7238982dc5efc5ecd08ed8d36d926fc95",
+ "excerpt": true,
+ "full_sha256": "ba8fbd1b114e7b1a73a11004f440c397ec331b6892c683293d6ba848a59864ef",
+ "selection": "entities naming key terms + 300 random (seed 7)"
+}

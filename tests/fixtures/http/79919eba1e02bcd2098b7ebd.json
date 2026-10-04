@@ -1,0 +1,7 @@
+{
+ "url": "https://www.sec.gov/Archives/edgar/data/12927/000122520826006507/doc4.xml",
+ "status": 200,
+ "content_type": "text/xml",
+ "retrieved_at": "2026-10-04T17:04:20.957441+00:00",
+ "sha256": "b15ef651b4b1fe63eda2f690ed1e1b1aa0c9f17a7379d2da86129ded48ccbf71"
+}

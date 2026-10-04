@@ -1,0 +1,7 @@
+{
+ "url": "https://api.gleif.org/api/v1/lei-records?filter%5Bentity.legalName%5D=The+Boeing+Company&page%5Bsize%5D=20",
+ "status": 200,
+ "content_type": "application/vnd.api+json",
+ "retrieved_at": "2026-10-04T17:04:17.898896+00:00",
+ "sha256": "dc832f8155bfffdf5a6fb905252370a987058bb9b9ae8ec6c12ec8aa6cd6b308"
+}

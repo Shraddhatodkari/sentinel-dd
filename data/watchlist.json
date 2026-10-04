@@ -1,8 +1,0 @@
-[
-  {"name": "Viktor Rask", "list_name": "Global Consolidated", "category": "sanctions",
-   "aliases": ["Rask, Viktor", "V. Rask", "Viktor Raskov"], "country": "SC", "reference": "GC-2026-0412"},
-  {"name": "Anita Verma", "list_name": "PEP Registry", "category": "pep",
-   "aliases": ["Verma, Anita"], "country": "IN", "reference": "PEP-IN-88213"},
-  {"name": "Ostrava Shipping Ltd", "list_name": "Global Consolidated", "category": "sanctions",
-   "aliases": [], "country": "PA", "reference": "GC-2025-0099"}
-]

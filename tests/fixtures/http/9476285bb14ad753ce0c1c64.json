@@ -1,0 +1,7 @@
+{
+ "url": "https://data.sec.gov/api/xbrl/frames/us-gaap/NetIncomeLoss/USD/CY2024.json",
+ "status": 200,
+ "content_type": "application/json",
+ "retrieved_at": "2026-10-04T17:03:07.558394+00:00",
+ "sha256": "6f64d1fa5404f4f0ceb7613a7dde08c25be2259e9a64593a00d4fcf066d8d606"
+}

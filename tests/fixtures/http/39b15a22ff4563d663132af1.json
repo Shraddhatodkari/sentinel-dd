@@ -1,0 +1,7 @@
+{
+ "url": "https://data.sec.gov/api/xbrl/frames/us-gaap/Liabilities/USD/CY2024Q4I.json",
+ "status": 200,
+ "content_type": "application/json",
+ "retrieved_at": "2026-10-04T17:03:07.422322+00:00",
+ "sha256": "b4aa6cc8c979915319e98a0480a4d0f904017f0affee71e8aa26a6d182eaa8ce"
+}

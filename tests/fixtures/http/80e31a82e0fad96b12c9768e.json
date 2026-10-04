@@ -1,0 +1,7 @@
+{
+ "url": "https://api.gdeltproject.org/api/v2/doc/doc?format=json&maxrecords=75&mode=artlist&query=%22Apple+Inc.%22+sourcelang%3Aenglish&sort=datedesc&timespan=3months",
+ "status": 503,
+ "content_type": "text/plain",
+ "retrieved_at": "2026-10-04T17:04:15.844867+00:00",
+ "sha256": "bf979f8e946d90de52c7c561b82ea1e5ae0f3fcf9b0fdb9a4370bca5b77d49de"
+}

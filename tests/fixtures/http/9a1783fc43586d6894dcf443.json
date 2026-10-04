@@ -1,0 +1,7 @@
+{
+ "url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/index.json",
+ "status": 200,
+ "content_type": "application/json",
+ "retrieved_at": "2026-10-04T17:03:12.428122+00:00",
+ "sha256": "d61dde83df2dde7d63041e443321eab963b245e4c0090ba6240ce1711329de83"
+}

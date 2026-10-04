@@ -1,0 +1,7 @@
+{
+ "url": "https://api.gleif.org/api/v1/lei-records?filter%5Bentity.legalName%5D=Sberbank&page%5Bsize%5D=20",
+ "status": 200,
+ "content_type": "application/vnd.api+json",
+ "retrieved_at": "2026-10-04T17:05:25.513776+00:00",
+ "sha256": "733349ec0a75c02bc0d91f95e01a394b1760a02d608735b7d7d549fe498a164e"
+}

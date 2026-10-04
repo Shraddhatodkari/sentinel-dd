@@ -1,0 +1,7 @@
+{
+ "url": "https://api.gleif.org/api/v1/lei-records/549300WE6TAF5EEWQS81/direct-children?page%5Bsize%5D=25",
+ "status": 200,
+ "content_type": "application/vnd.api+json",
+ "retrieved_at": "2026-10-04T17:05:27.042883+00:00",
+ "sha256": "0cf3688afbfc765dbbb8b82ebf48fb9f7744c3de76576d61e970ec45a7013e5c"
+}

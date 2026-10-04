@@ -1,0 +1,7 @@
+{
+ "url": "https://www.sec.gov/Archives/edgar/data/320193/000114036126035362/form4.xml",
+ "status": 200,
+ "content_type": "text/xml",
+ "retrieved_at": "2026-10-04T17:03:13.975530+00:00",
+ "sha256": "0cb08845a04b8958ea4eb7e9ea7dff2014f9436c3df8a8b53a833c0870a65c1d"
+}

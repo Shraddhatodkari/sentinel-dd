@@ -1,0 +1,7 @@
+{
+ "url": "https://api.gleif.org/api/v1/lei-records?filter%5Bfulltext%5D=BOEING+CO&page%5Bsize%5D=20",
+ "status": 200,
+ "content_type": "application/vnd.api+json",
+ "retrieved_at": "2026-10-04T17:04:17.619953+00:00",
+ "sha256": "b1b0988302da0ce62ba9d158b0c3a0dc127aabfdac8e370200e6623f809325b9"
+}

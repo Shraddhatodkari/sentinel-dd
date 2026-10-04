@@ -1,0 +1,7 @@
+{
+ "url": "https://api.gleif.org/api/v1/lei-records?filter%5Bentity.legalName%5D=BOEING+CO&page%5Bsize%5D=20",
+ "status": 200,
+ "content_type": "application/vnd.api+json",
+ "retrieved_at": "2026-10-04T17:04:17.355564+00:00",
+ "sha256": "8f6f0634d94517d9c5de460ce6fafd364c0748c18a5b7aa36a3d0426bf169cfd"
+}

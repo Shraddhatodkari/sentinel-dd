@@ -1,0 +1,10 @@
+{
+ "url": "https://unitedstates.github.io/congress-legislators/legislators-current.json",
+ "status": 200,
+ "content_type": "application/json",
+ "retrieved_at": "2026-10-04T16:57:55.297689+00:00",
+ "sha256": "9cabe6ccb79422dd4f3b7480bafd3c5232b9793181a85530cddd6b992ee029ee",
+ "excerpt": true,
+ "full_sha256": "ae8cb9477c48715df71a7d860854229d799dc90a254d61badc1efb770f892b2c",
+ "selection": "members with last name in {'Joyce'} + 80 random (seed 7)"
+}

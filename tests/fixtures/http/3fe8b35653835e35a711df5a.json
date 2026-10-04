@@ -1,0 +1,7 @@
+{
+ "url": "https://www.justice.gov/api/v1/press_releases.json?direction=DESC&pagesize=25&parameters%5Btitle%5D=apple&sort=date",
+ "status": 200,
+ "content_type": "application/json",
+ "retrieved_at": "2026-10-04T17:03:11.307439+00:00",
+ "sha256": "c24248cac3b4694d291d934a687dfea277f9d8ceca28bd0b6caccf60d8403f4f"
+}
