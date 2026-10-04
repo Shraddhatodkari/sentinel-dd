@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push: {branches: [main]}
+  pull_request:
+  schedule: [{cron: "0 3 * * 1"}]   # weekly drift + dependency audit
+
+permissions: {contents: read}
+
+concurrency: {group: "${{ github.workflow }}-${{ github.ref }}", cancel-in-progress: true}
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e ".[dev]"
+      - name: Lint
+        run: ruff check src tests && ruff format --check src tests
+      - name: Type-check
+        run: mypy src
+
+  test:
+    needs: quality
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: {python-version: ["3.11", "3.12", "3.13"]}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "${{ matrix.python-version }}", cache: pip}
+      - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install -e ".[dev]"
+      - name: Unit + integration + e2e tests (coverage gate 80%)
+        run: pytest --cov=sentinel --cov-report=xml --cov-report=term
+      - uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.12'
+        with: {name: coverage, path: coverage.xml}
+
+  eval-gate:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e .
+      - name: Train, quality-gate and register champion model
+        run: python -m sentinel.ml.train --model-dir var/models
+      - name: RAG / agent / prompt-injection evaluation gates
+        run: python scripts/evaluate.py
+      - name: Drift check
+        run: python scripts/drift_check.py --model-dir var/models || [ $? -eq 2 ]
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install bandit pip-audit && pip install -e .
+      - name: SAST (bandit)
+        run: bandit -r src -ll -q
+      - name: Dependency vulnerabilities (pip-audit)
+        run: pip-audit --progress-spinner off || true   # report-only; triage in SECURITY.md process
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env: {GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"}
+
+  docker:
+    needs: [test, eval-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with: {context: ., push: false, tags: "sentinel-dd:${{ github.sha }}", load: true}
+      - name: Container vulnerability scan (Trivy)
+        uses: aquasecurity/trivy-action@0.28.0
+        with: {image-ref: "sentinel-dd:${{ github.sha }}", severity: "CRITICAL,HIGH", exit-code: "0"}
