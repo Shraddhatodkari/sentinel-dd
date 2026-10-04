@@ -1,0 +1,29 @@
+{
+  "description": "Real U.S. DOJ press-release titles (retrieved 2026-10-04 via justice.gov API, see tests/fixtures/http) hand-labelled by the project maintainers with the role of the named company. 'subject' = the company is the target of the reported action; 'victim' = the company was harmed; 'mentioned' = incidental/unclear.",
+  "items": [
+    {"entity": "Apple Inc.", "title": "Justice Department Sues Apple for Monopolizing Smartphone Markets", "role": "subject"},
+    {"entity": "Apple Inc.", "title": "Four Additional States Join Justice Department’s Suit Against Apple for Monopolizing Smartphone Markets", "role": "subject"},
+    {"entity": "Apple Inc.", "title": "Two Foreign Nationals Sentenced for Multimillion-Dollar Scheme to Defraud Apple Inc. Out of 6,000 iPhones", "role": "victim"},
+    {"entity": "Apple Inc.", "title": "Multimillion Dollar Scheme to Defraud Apple Inc. out of 6,000 iPhones Nets Prison Terms for Two Maryland Residents", "role": "victim"},
+    {"entity": "Apple Inc.", "title": "Three Men Charged with Gunpoint Robbery of Apple Products Delivery Truck, Related Offenses", "role": "victim"},
+    {"entity": "Apple Inc.", "title": "Chinese Nationals Plead Guilty to Fake Apple Device Return Fraud that Conned the Technology Giant Out of More Than $16 Million", "role": "victim"},
+    {"entity": "Apple Inc.", "title": "International Trafficker of Counterfeit Apple Products Sentenced to Prison", "role": "victim"},
+    {"entity": "Apple Inc.", "title": "Former University Employee Charged with Selling Stolen Apple Products to Folsom Contact", "role": "victim"},
+    {"entity": "Apple Inc.", "title": "Chinese Nationals Arrested for Alleged $12.3 Million Fraud Involving Fraudulent Return of Counterfeit Apple iPhones and Other Devices", "role": "victim"},
+    {"entity": "Apple Inc.", "title": "Man Sentenced to 28 Years in Federal Prison for Targeting and Robbing Victims Selling Apple Products on OfferUp", "role": "victim"},
+    {"entity": "Apple Inc.", "title": "Apple Valley Woman Charged with Participating in $250 Million Feeding Our Future Fraud Scheme", "role": "mentioned"},
+    {"entity": "Apple Inc.", "title": "Apple Valley Man Sentenced to 13.5 Years in Prison for Possession of Narcotics, Firearms", "role": "mentioned"},
+    {"entity": "The Boeing Company", "title": "Boeing Charged with 737 Max Fraud Conspiracy and Agrees to Pay over $2.5 Billion", "role": "subject"},
+    {"entity": "The Boeing Company", "title": "Boeing Charged with 737 Max Fraud Conspiracy,  Agrees to Pay $2.5 Billion+", "role": "subject"},
+    {"entity": "The Boeing Company", "title": "Boeing to Pay $8.1 Million to Resolve Alleged False Claims Act Violations Arising from Manufacture of V-22 Osprey Aircraft", "role": "subject"},
+    {"entity": "The Boeing Company", "title": "The Boeing Company to Pay $8.1 Million to Resolve False Claims Act Allegations", "role": "subject"},
+    {"entity": "The Boeing Company", "title": "Boeing Pays $18 Million to Settle False Claims Act Allegations", "role": "subject"},
+    {"entity": "The Boeing Company", "title": "Boeing Pays $23 Million to Resolve False Claims Act Allegations", "role": "subject"},
+    {"entity": "The Boeing Company", "title": "Orange County Man Indicted on Charges that He Stole Boeing Employees’ Identities, Siphoned Money from Their Retirement Plan", "role": "victim"},
+    {"entity": "The Boeing Company", "title": "Former Boeing 737 MAX Chief Technical Pilot Indicted for Fraud", "role": "mentioned"},
+    {"entity": "The Boeing Company", "title": "Justice Department Seeks Seizure of Boeing 747 Cargo Plane Grounded in Argentina", "role": "mentioned"},
+    {"entity": "The Boeing Company", "title": "Former Iranian-Owned Boeing Aircraft Successfully Returned to the United States", "role": "mentioned"},
+    {"entity": "The Boeing Company", "title": "Boeing Subcontractor Sentenced On Federal Fraud Charges", "role": "mentioned"},
+    {"entity": "The Boeing Company", "title": "California Sub-Contractor Pleads Guilty To Fraud Involving Boeing Contracts", "role": "mentioned"}
+  ]
+}

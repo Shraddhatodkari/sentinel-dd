@@ -6,7 +6,6 @@ Pipeline: query analysis (structured filter extraction) -> dense + sparse candid
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 
 import numpy as np
@@ -17,10 +16,29 @@ from sentinel.rag.bm25 import BM25Index, tokenize
 from sentinel.vectorstore.base import MetadataFilter, VectorStore
 
 DOC_TYPE_HINTS = {
-    "news": ("news", "media", "press", "article", "adverse"),
-    "registry": ("registry", "incorporat", "registered", "shareholder", "ownership", "director"),
-    "financials": ("revenue", "financial", "profit", "debt", "audit", "ebitda"),
-    "certification": ("iso", "soc 2", "soc2", "certif", "compliance attestation"),
+    "media": ("news", "media", "press", "article", "adverse", "enforcement", "charged", "lawsuit", "investigation"),
+    "registry": (
+        "registry",
+        "incorporat",
+        "registered",
+        "shareholder",
+        "ownership",
+        "director",
+        "officer",
+        "parent",
+        "subsidiar",
+        "lei",
+    ),
+    "financials": ("revenue", "financial", "profit", "debt", "income", "assets", "liabilities", "equity"),
+    "filing": ("risk factor", "legal proceeding", "cybersecurity", "disclose", "10-k", "annual report", "business"),
+    "screening": ("sanction", "pep", "politically exposed", "watch list", "watchlist", "designat"),
+}
+KINDS_FOR_HINT = {
+    "media": ("media_article", "enforcement_release"),
+    "registry": ("registry_profile", "lei_record", "ownership", "subsidiaries", "insider"),
+    "financials": ("financial_facts",),
+    "filing": ("filing_text",),
+    "screening": ("sanctions_record", "pep_record"),
 }
 
 
@@ -32,9 +50,9 @@ class QueryPlan:
 
 
 def analyze_query(query: str, known_entities: list[str] | None = None) -> QueryPlan:
-    """Structured-retrieval pattern: derive metadata filters from the natural-language query.
+    """Structured-retrieval pattern: derive metadata filters / boosts from the natural-language query.
 
-    Entity filters are *hard* (precision), doc-type hints are *soft* (used for boosting).
+    Entity filters are *hard* (precision); evidence-kind hints are *soft* (used for reranking boosts).
     """
     q = query.lower()
     filters: MetadataFilter = {}
@@ -42,11 +60,9 @@ def analyze_query(query: str, known_entities: list[str] | None = None) -> QueryP
         if ent.lower() in q:
             filters["entity"] = ent
             break
-    years = [int(y) for y in re.findall(r"\b(20\d{2})\b", q)]
-    if years:
-        filters["year"] = {"$gte": min(years)}
-    types = [t for t, hints in DOC_TYPE_HINTS.items() if any(h in q for h in hints)]
-    return QueryPlan(query, filters, types)
+    hints = [t for t, words in DOC_TYPE_HINTS.items() if any(w in q for w in words)]
+    kinds = sorted({k for h in hints for k in KINDS_FOR_HINT[h]})
+    return QueryPlan(query, filters, kinds)
 
 
 def rrf(rankings: list[list[ScoredChunk]], k: int = 60, weights: list[float] | None = None) -> list[ScoredChunk]:
@@ -71,7 +87,11 @@ class LexicalReranker:
         for sc in cands:
             toks = tokenize(sc.chunk.text)
             coverage = len(q & set(toks)) / max(len(q), 1)
-            boost = 0.15 if doc_types and sc.chunk.metadata.get("doc_type") in doc_types else 0.0
+            boost = (
+                0.15
+                if doc_types and sc.chunk.metadata.get("kind", sc.chunk.metadata.get("doc_type")) in doc_types
+                else 0.0
+            )
             out.append(ScoredChunk(sc.chunk, 0.6 * coverage + 0.4 * min(sc.score * 30, 1.0) + boost, sc.source))
         return sorted(out, key=lambda s: -s.score)
 

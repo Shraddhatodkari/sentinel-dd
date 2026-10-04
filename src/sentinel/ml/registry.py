@@ -1,9 +1,12 @@
-"""File-based model registry with versioning, stages, integrity hashes and optional MLflow mirroring.
+"""File-based model registry: versioning, stages, integrity hashes, data provenance and promotion gates.
 
 Layout::
 
     <root>/<name>/v<N>/model.pkl
-    <root>/<name>/v<N>/meta.json   # metrics, params, features, sha256, created_at, stage
+    <root>/<name>/v<N>/meta.json   # metrics, params, features, sha256, provenance, lineage, stage
+
+Governance rule: a model can be promoted to ``production`` only if it was trained on ``real`` data with recorded
+lineage. Models trained on synthetic or unknown data are refused (they may still be used in research/staging).
 """
 
 from __future__ import annotations
@@ -47,6 +50,8 @@ class ModelRegistry:
         metrics: dict[str, float],
         params: dict[str, Any] | None = None,
         features: list[str] | None = None,
+        provenance: str = "unknown",
+        lineage: dict[str, Any] | None = None,
     ) -> int:
         version = (self.versions(name) or [0])[-1] + 1
         d = self._dir(name, version)
@@ -62,6 +67,8 @@ class ModelRegistry:
             "sha256": hashlib.sha256(blob).hexdigest(),
             "created_at": time.time(),
             "stage": "none",
+            "provenance": provenance,
+            "lineage": lineage or {},
         }
         (d / "meta.json").write_text(json.dumps(meta, indent=2))
         self._mirror_mlflow(name, version, metrics, params or {})
@@ -78,19 +85,24 @@ class ModelRegistry:
             with mlflow.start_run(run_name=f"{name}-v{version}"):
                 mlflow.log_params({k: str(v) for k, v in params.items()})
                 mlflow.log_metrics(metrics)
-        except Exception:  # noqa: S110 - tracking must never break training
-            pass
+        except Exception as exc:  # tracking must never break training, but the failure is surfaced
+            print(f"warning: MLflow mirroring failed: {exc}")
 
     def set_stage(self, name: str, version: int, stage: str) -> None:
         if stage not in STAGES:
             raise RegistryError(f"invalid stage {stage}")
-        if stage == "production":  # single production version: archive the previous one
-            for v in self.versions(name):
-                m = self.meta(name, v)
-                if m["stage"] == "production" and v != version:
-                    m["stage"] = "archived"
-                    (self._dir(name, v) / "meta.json").write_text(json.dumps(m, indent=2))
         m = self.meta(name, version)
+        if stage == "production":
+            if m.get("provenance") != "real" or not m.get("lineage"):
+                raise RegistryError(
+                    f"{name} v{version} cannot be promoted: provenance={m.get('provenance')!r}; production models "
+                    "must be trained on real data with recorded lineage"
+                )
+            for v in self.versions(name):
+                other = self.meta(name, v)
+                if other["stage"] == "production" and v != version:
+                    other["stage"] = "archived"
+                    (self._dir(name, v) / "meta.json").write_text(json.dumps(other, indent=2))
         m["stage"] = stage
         (self._dir(name, version) / "meta.json").write_text(json.dumps(m, indent=2))
 

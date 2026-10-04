@@ -1,22 +1,26 @@
-"""End-to-end training pipeline (MLOps): data -> train -> evaluate -> quality gate -> register ->
-champion/challenger promotion. Runnable as ``sentinel-train`` or ``python -m sentinel.ml.train``."""
+"""MLOps pipeline for the peer-anomaly model: real SEC data → train → evaluate → gate → register → promote.
+
+    sentinel ml train --year 2024
+
+Quality gates (fail → model stays in staging, exit code 1):
+  * ≥ 1,000 peer filers with complete inputs
+  * training anomaly rate within [0.02, 0.10] (contamination sanity)
+  * stability: ≥ 80% agreement of anomaly flags between two random seeds
+Champion/challenger: a new version replaces production only if it trains on a period ≥ the champion's period.
+"""
 
 from __future__ import annotations
 
-import argparse
-import json
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Any
 
 import numpy as np
 
-from sentinel.ml.features import FEATURES
-from sentinel.ml.models import TrainedBundle, train_all
 from sentinel.ml.registry import ModelRegistry
+from sentinel.risk.peer_model import FEATURES, MODEL_NAME, PeerAnomalyModel, PeerDataset, build_dataset
+from sentinel.sources.fetcher import SourceFetcher
 
-QUALITY_GATES = {"risk_roc_auc": 0.78, "media_macro_f1": 0.85}
-MAX_BRIER = 0.15
-PROMOTION_MARGIN = 0.0  # challenger must be >= champion AUC + margin
+MIN_SAMPLES = 1000
 
 
 @dataclass
@@ -27,48 +31,51 @@ class TrainResult:
     promoted: bool
     reasons: list[str]
 
-
-def check_gates(metrics: dict[str, float]) -> list[str]:
-    failures = [f"{k}={metrics.get(k, 0):.3f} < {v}" for k, v in QUALITY_GATES.items() if metrics.get(k, 0) < v]
-    if metrics.get("risk_brier", 1.0) > MAX_BRIER:
-        failures.append(f"risk_brier={metrics['risk_brier']:.3f} > {MAX_BRIER}")
-    return failures
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
 
-def run_pipeline(registry: ModelRegistry, n: int = 4000, seed: int = 7) -> tuple[TrainResult, TrainedBundle]:
-    bundle, Xref = train_all(n, seed)
-    payload: dict[str, Any] = {"bundle": bundle, "reference_sample": Xref[:1000]}
+def evaluate(ds: PeerDataset, model: PeerAnomalyModel) -> dict[str, float]:
+    alt = PeerAnomalyModel(random_state=11).fit(ds)
+    a = model.pipe.predict(ds.X) == -1
+    b = alt.pipe.predict(ds.X) == -1
+    return {"n_samples": float(len(ds.X)), "anomaly_rate": float(np.mean(a)), "seed_agreement": float(np.mean(a == b))}
+
+
+def gates(metrics: dict[str, float]) -> list[str]:
+    fails = []
+    if metrics["n_samples"] < MIN_SAMPLES:
+        fails.append(f"n_samples {int(metrics['n_samples'])} < {MIN_SAMPLES}")
+    if not 0.02 <= metrics["anomaly_rate"] <= 0.10:
+        fails.append(f"anomaly_rate {metrics['anomaly_rate']:.3f} outside [0.02, 0.10]")
+    if metrics["seed_agreement"] < 0.8:
+        fails.append(f"seed_agreement {metrics['seed_agreement']:.3f} < 0.80")
+    return fails
+
+
+def train_and_register(registry: ModelRegistry, ds: PeerDataset) -> TrainResult:
+    model = PeerAnomalyModel().fit(ds)
+    metrics = evaluate(ds, model)
     version = registry.register(
-        "risk_bundle", payload, bundle.metrics, {"n": n, "seed": seed, "algo": "GBM+sigmoid-calibration"}, FEATURES
+        MODEL_NAME,
+        model,
+        metrics,
+        {"algo": "IsolationForest", "contamination": 0.05, "period": ds.period},
+        FEATURES,
+        provenance="real",
+        lineage={"source": "SEC XBRL frames", "document_ids": ds.document_ids, "period": ds.period},
     )
-    failures = check_gates(bundle.metrics)
-    reasons = list(failures)
-    promoted = False
-    if not failures:
-        champion = registry.latest("risk_bundle", "production")
-        champ_auc = registry.meta("risk_bundle", champion)["metrics"]["risk_roc_auc"] if champion else -np.inf
-        if bundle.metrics["risk_roc_auc"] >= champ_auc + PROMOTION_MARGIN:
-            registry.set_stage("risk_bundle", version, "production")
-            promoted = True
-            reasons.append("promoted: challenger >= champion")
-        else:
-            registry.set_stage("risk_bundle", version, "staging")
-            reasons.append(f"kept in staging: AUC {bundle.metrics['risk_roc_auc']:.3f} < champion {champ_auc:.3f}")
-    return TrainResult(version, bundle.metrics, not failures, promoted, reasons), bundle
+    fails = gates(metrics)
+    if fails:
+        registry.set_stage(MODEL_NAME, version, "staging")
+        return TrainResult(version, metrics, False, False, fails)
+    champ = registry.latest(MODEL_NAME, "production")
+    if champ is not None and registry.meta(MODEL_NAME, champ)["params"].get("period", "") > ds.period:
+        registry.set_stage(MODEL_NAME, version, "staging")
+        return TrainResult(version, metrics, True, False, ["champion trained on a more recent period"])
+    registry.set_stage(MODEL_NAME, version, "production")
+    return TrainResult(version, metrics, True, True, ["promoted"])
 
 
-def main(argv: list[str] | None = None) -> None:
-    ap = argparse.ArgumentParser(description="Train & register Sentinel ML models")
-    ap.add_argument("--model-dir", default="var/models")
-    ap.add_argument("--n", type=int, default=4000)
-    ap.add_argument("--seed", type=int, default=7)
-    ap.add_argument("--mlflow-uri", default=None)
-    args = ap.parse_args(argv)
-    res, _ = run_pipeline(ModelRegistry(args.model_dir, args.mlflow_uri), args.n, args.seed)
-    print(json.dumps(res.__dict__, indent=2, default=str))
-    if not res.passed_gates:
-        raise SystemExit(1)
-
-
-if __name__ == "__main__":  # pragma: no cover
-    main()
+def run(fetcher: SourceFetcher, registry: ModelRegistry, year: int) -> TrainResult:
+    return train_and_register(registry, build_dataset(fetcher, year))
