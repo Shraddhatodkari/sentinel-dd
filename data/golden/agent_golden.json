@@ -1,0 +1,5 @@
+[
+  {"entity": "Northwind Logistics Pvt Ltd", "expected_band": "LOW", "expect_hitl": false},
+  {"entity": "Helios Trade FZE", "expected_band": "HIGH", "expect_hitl": true},
+  {"entity": "BlueOrbit Analytics Inc", "expected_band_in": ["LOW", "MEDIUM"], "expect_hitl": true}
+]
