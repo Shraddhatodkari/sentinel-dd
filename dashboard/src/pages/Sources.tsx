@@ -61,7 +61,7 @@ export function SourcesPage() {
                     <td className="num">{s.current_records || "—"}</td>
                     <td className="nowrap small">{fmt.date(s.last_retrieved_at)}<div className="muted">{s.age_hours == null ? "" : `${s.age_hours.toFixed(1)} h ago`}</div></td>
                     <td className="small">{s.freshness_sla_h ? `${s.freshness_sla_h} h` : "on demand"}</td>
-                    <td>{!s.enabled ? <span className="badge b-info">disabled</span> : s.stale ? <span className="badge b-high">stale</span> : !s.freshness_sla_h ? <span className="badge b-info">queried per case</span> : <span className="badge b-low">fresh</span>}</td>
+                    <td>{!s.enabled ? <span className="badge b-info">disabled</span> : s.stale ? <span className="badge b-high">stale</span> : !s.freshness_sla_h && !s.last_retrieved_at ? <span className="badge b-medium" title="No successful retrieval yet; cases record this source as unavailable">not yet retrieved</span> : !s.freshness_sla_h ? <span className="badge b-info">queried per case</span> : <span className="badge b-low">fresh</span>}</td>
                     <td className="small">{s.last_run ? <><span className={`badge ${s.last_run.status === "succeeded" ? "b-low" : s.last_run.status === "failed" ? "b-high" : "b-info"}`}>{s.last_run.status}</span>{s.last_run.unchanged && <span className="muted"> unchanged</span>}{s.last_run.error && <div style={{ color: "var(--high)" }}>{s.last_run.error.slice(0, 120)}</div>}</> : "—"}</td>
                     {canRefresh && <td>{s.enabled && (s.kind === "sanctions" || s.kind === "pep") && <button className="btn" onClick={() => refresh(s.source_id)}>Refresh</button>}</td>}
                   </tr>

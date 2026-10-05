@@ -63,7 +63,7 @@ export function GovernancePage() {
             <dt>Screening review</dt><dd>{data.screening_threshold}</dd>
             <dt>Grounding minimum</dt><dd>{data.grounding_threshold}</dd>
             <dt>Risk bands</dt><dd>LOW &lt; 25 ≤ MEDIUM &lt; 50 ≤ HIGH</dd>
-            <dt>Auto-clear</dt><dd>{data.auto_clear_enabled ? <span className="badge b-medium">enabled</span> : <span className="badge b-low">disabled — every case gets human review</span>}</dd>
+            <dt>Auto-clear</dt><dd>{data.auto_clear_enabled ? <span className="badge b-medium">enabled</span> : <><span className="badge b-low">disabled</span><div className="small muted">every case gets a human decision</div></>}</dd>
           </dl>
         </Card>
         <Card title="Jurisdiction policy">

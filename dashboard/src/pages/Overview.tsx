@@ -143,6 +143,7 @@ export function OverviewPage() {
                       {!s.enabled ? <span className="badge b-info">disabled</span>
                         : s.stale ? <span className="badge b-high">stale</span>
                         : s.last_status === "failed" ? <span className="badge b-medium">last run failed</span>
+                        : !s.freshness_sla_h && s.age_hours == null ? <span className="badge b-medium" title="No successful retrieval yet; cases record this source as unavailable">not yet retrieved</span>
                         : !s.freshness_sla_h ? <span className="badge b-info">queried per case</span>
                         : <span className="badge b-low">fresh</span>}
                     </td>
