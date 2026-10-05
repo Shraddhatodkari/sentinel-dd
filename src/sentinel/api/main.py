@@ -66,6 +66,15 @@ def create_app(
         _attach(app, container, service)
     rate = container.settings.rate_limit_per_minute if container else 120
     app.add_middleware(SecurityMiddleware, limiter=TokenBucketLimiter(rate))
+    if container is not None and container.settings.cors_origins:
+        from fastapi.middleware.cors import CORSMiddleware
+
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=container.settings.cors_origins,
+            allow_methods=["GET", "POST"],
+            allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Request-ID"],
+        )
     login_limiter = TokenBucketLimiter(container.settings.login_rate_limit_per_minute if container else 10)
 
     @app.exception_handler(RequestValidationError)

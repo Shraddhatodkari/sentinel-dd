@@ -26,6 +26,13 @@ CSP = (
     "font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
 )
 
+# Swagger UI (/api/docs only) loads its bundle from jsDelivr and boots with an inline script.
+DOCS_CSP = (
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    "style-src 'self' https://cdn.jsdelivr.net; img-src 'self' data: https://fastapi.tiangolo.com; "
+    "connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+)
+
 
 def current_principal(request: Request, creds: HTTPAuthorizationCredentials | None = Depends(bearer)) -> Principal:
     if creds is None or creds.scheme.lower() != "bearer":
@@ -119,7 +126,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         resp.headers["permissions-policy"] = "camera=(), microphone=(), geolocation=()"
         resp.headers["strict-transport-security"] = "max-age=31536000; includeSubDomains"
         resp.headers["cross-origin-opener-policy"] = "same-origin"
-        resp.headers["content-security-policy"] = CSP
+        resp.headers["content-security-policy"] = DOCS_CSP if path == "/api/docs" else CSP
         if path.startswith("/api/"):
             resp.headers["cache-control"] = "no-store"
         return resp

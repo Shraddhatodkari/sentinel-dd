@@ -121,3 +121,31 @@ def test_record_and_replay(tmp_path):
     assert rep.get("https://example.org/excerpt").content == b"x"
     assert canonical_url("HTTPS://Example.org/p?b=1&a=2#frag") == "https://example.org/p?a=2&b=1"
     assert datetime.now(UTC)
+
+
+def test_concurrent_record_of_same_document_reuses_row(container, monkeypatch):
+    """Two workers fetching the same URL with identical bytes: the loser of the insert race reuses the winner's row."""
+    from datetime import UTC, datetime
+
+    from sqlalchemy import func, select
+    from sqlalchemy.exc import IntegrityError
+
+    from sentinel.db.models import SourceDocument
+
+    f = container.fetcher
+    original = f._upsert_document
+    calls = {"n": 0}
+
+    def racing(*args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            original(*args, **kwargs)  # "other worker" commits first …
+            raise IntegrityError("INSERT", {}, Exception("duplicate key"))  # … and our insert collides
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(f, "_upsert_document", racing)
+    url = "https://www.sec.gov/files/race-test.json"
+    got = f.record("sec_edgar", url, b'{"x":1}', "application/json", datetime.now(UTC))
+    with container.db.session() as s:
+        rows = s.scalar(select(func.count()).select_from(SourceDocument).where(SourceDocument.url == url))
+    assert calls["n"] == 2 and rows == 1 and got.document_id

@@ -26,8 +26,15 @@ def llm_context(case_id: str | None, purpose: str) -> Iterator[None]:
 
 
 class MeteredLLM(LLMClient):
-    def __init__(self, inner: LLMClient, db: Database | None, prices: dict[str, tuple[float, float]]) -> None:
+    def __init__(
+        self,
+        inner: LLMClient,
+        db: Database | None,
+        prices: dict[str, tuple[float, float]],
+        max_tokens_cap: int | None = None,
+    ) -> None:
         self.inner = inner
+        self.max_tokens_cap = max_tokens_cap  # deployment-wide ceiling on output tokens per call (cost control)
         self.db = db
         self.prices = prices
         self.provider = inner.provider
@@ -36,6 +43,8 @@ class MeteredLLM(LLMClient):
     def complete(
         self, messages: list[Message], *, system: str | None = None, max_tokens: int = 1024, temperature: float = 0.0
     ) -> LLMResponse:
+        if self.max_tokens_cap:
+            max_tokens = min(max_tokens, self.max_tokens_cap)
         started = time.perf_counter()
         resp = self.inner.complete(messages, system=system, max_tokens=max_tokens, temperature=temperature)
         latency = int((time.perf_counter() - started) * 1000)

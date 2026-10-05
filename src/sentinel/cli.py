@@ -172,6 +172,22 @@ def cmd_eval(args: argparse.Namespace) -> int:
     return 0 if not rep["failures"] else 1
 
 
+def _guarded(fn: Any) -> Any:
+    """Report upstream/source failures as a one-line error and exit code 1 instead of a traceback."""
+
+    def run(args: argparse.Namespace) -> int:
+        from sentinel.ml.registry import RegistryError
+        from sentinel.sources.http import SourceError
+
+        try:
+            return int(fn(args))
+        except (SourceError, RegistryError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+
+    return run
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="sentinel")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -210,7 +226,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed", type=int, default=7)
     p.set_defaults(fn=cmd_eval)
     args = ap.parse_args(argv)
-    return int(args.fn(args))
+    return int(_guarded(args.fn)(args))
 
 
 if __name__ == "__main__":  # pragma: no cover

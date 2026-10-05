@@ -84,3 +84,15 @@ def test_context_and_output_guardrails():
     assert g.check_output("INSUFFICIENT_EVIDENCE: nothing").allowed
     bad = g.check_output("This vendor is guaranteed safe [doc#1].")
     assert not bad.allowed and "prohibited:overclaiming" in bad.violations
+
+
+def test_output_guardrail_blocks_determination_language():
+    from sentinel.security.dlp import DLPEngine
+    from sentinel.security.guardrails import Guardrails
+
+    g = Guardrails(DLPEngine())
+    assert (
+        "prohibited:determination_claim" in g.check_output("The vendor is definitely sanctioned [ab12cd#0]").violations
+    )
+    assert not g.check_output("This is not a regulatory determination [ab12cd#0]").violations
+    assert g.check_output("One sanctions potential match requires review [ab12cd#0]").allowed

@@ -26,7 +26,6 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------ runtime
     env: Literal["dev", "test", "staging", "prod"] = "dev"
     log_level: str = "INFO"
-    service_name: str = "sentinel-dd"
     data_dir: Path = Path("var")  # raw source store, checkpoints, model registry (mount a volume in prod)
 
     # ------------------------------------------------------------------ persistence
@@ -47,7 +46,7 @@ class Settings(BaseSettings):
     vertex_project: str | None = None
     vertex_location: str = "us-central1"
     vertex_model: str = "gemini-1.5-pro"
-    llm_max_tokens: int = 1024
+    llm_max_tokens: int = 1024  # ceiling on output tokens per LLM call
     llm_timeout_s: float = 60.0
     llm_max_retries: int = 3
     # USD per 1M tokens (input, output) used for cost metrics; override to match your contract pricing
@@ -62,11 +61,10 @@ class Settings(BaseSettings):
     http_backoff_base_s: float = 1.0
     http_rate_limits_enabled: bool = True  # honour published fair-access intervals (SEC 10 req/s, GDELT 1/5 s)
     source_cache_ttl_s: int = 6 * 3600  # per-entity source responses re-used within this window
-    sanctions_max_age_h: int = 36  # watch-list freshness SLA; stale lists block auto-clearing
-    pep_max_age_h: int = 24 * 14
+    sanctions_max_age_h: int = 36  # sanctions-list freshness SLA (h); stale lists force review (TPRM-DAT-03)
+    pep_max_age_h: int = 24 * 14  # PEP-list freshness SLA (h)
     enable_gdelt: bool = True
     enable_opensanctions_peps: bool = False  # OpenSanctions is CC BY-NC: enable only with a commercial licence
-    opensanctions_api_key: SecretStr | None = None
 
     # ------------------------------------------------------------------ retrieval
     embedding_backend: EmbeddingBackend = "hashing"
@@ -87,7 +85,7 @@ class Settings(BaseSettings):
     jwt_issuer: str = "sentinel-dd"
     rate_limit_per_minute: int = 120
     login_rate_limit_per_minute: int = 10
-    cors_origins: list[str] = Field(default_factory=list)
+    cors_origins: list[str] = Field(default_factory=list)  # only needed if the UI is served from another origin
     local_auth_enabled: bool = True  # username/password login against the users table (disable behind an IdP)
     password_min_length: int = 12
 
@@ -99,7 +97,7 @@ class Settings(BaseSettings):
     runner_mode: Literal["background", "inline"] = "background"
     runner_workers: int = 2
 
-    @field_validator("anthropic_api_key", "openai_api_key", "opensanctions_api_key", "vertex_project", mode="before")
+    @field_validator("anthropic_api_key", "openai_api_key", "vertex_project", mode="before")
     @classmethod
     def _blank_is_unset(cls, v: object) -> object:
         return None if isinstance(v, str) and not v.strip() else v

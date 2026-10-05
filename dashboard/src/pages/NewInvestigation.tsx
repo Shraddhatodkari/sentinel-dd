@@ -86,7 +86,7 @@ export function NewInvestigationPage() {
             <li><strong>Resolve</strong> — SEC EDGAR company index and GLEIF LEI register.</li>
             <li><strong>Collect in parallel</strong> — sanctions/PEP screening (OFAC, UN, UK, EU, US Congress), GLEIF ownership, Exhibit 21 subsidiaries, Form 3/4 insiders, 10-K sections, XBRL financials, DOJ press releases and GDELT.</li>
             <li><strong>Analyse</strong> — case GraphRAG, signals, versioned scorecard and peer model.</li>
-            <li><strong>Policy</strong> — deterministic rules decide CLEAR / REVIEW / ESCALATE.</li>
+            <li><strong>Policy</strong> — deterministic rules decide AUTO_CLEAR (disabled by default) / REVIEW / ESCALATE.</li>
             <li><strong>Human review</strong> — a different, authorised reviewer records the decision.</li>
           </ol>
           <div className="alert alert-info" style={{ marginTop: 14 }}>

@@ -44,9 +44,14 @@ class RunSummary:
         return asdict(self)
 
 
-def sync_source_catalog(db: Database, opensanctions_enabled: bool = False) -> None:
+def sync_source_catalog(
+    db: Database, opensanctions_enabled: bool = False, sla_overrides: dict[str, int] | None = None
+) -> None:
+    """Upsert the source catalogue. ``sla_overrides`` maps a source kind (sanctions, pep) to a freshness SLA in
+    hours (``SENTINEL_SANCTIONS_MAX_AGE_H`` / ``SENTINEL_PEP_MAX_AGE_H``)."""
     with db.session() as s:
         for sd in SOURCES.values():
+            sla = (sla_overrides or {}).get(sd.kind, sd.freshness_sla_h) if sd.freshness_sla_h else None
             row = s.get(Source, sd.id)
             enabled = sd.enabled_by_default or (sd.id == "opensanctions_peps" and opensanctions_enabled)
             if row is None:
@@ -58,13 +63,13 @@ def sync_source_catalog(db: Database, opensanctions_enabled: bool = False) -> No
                         authority=sd.authority,
                         url=sd.url,
                         license=sd.license,
-                        freshness_sla_h=sd.freshness_sla_h,
+                        freshness_sla_h=sla,
                         enabled=enabled,
                     )
                 )
             else:
                 row.name, row.kind, row.authority, row.url = sd.name, sd.kind, sd.authority, sd.url
-                row.license, row.freshness_sla_h, row.enabled = sd.license, sd.freshness_sla_h, enabled
+                row.license, row.freshness_sla_h, row.enabled = sd.license, sla, enabled
 
 
 class ReferenceDataService:

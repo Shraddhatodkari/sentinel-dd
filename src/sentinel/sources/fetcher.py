@@ -12,6 +12,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from sentinel.db.base import Database
 from sentinel.db.models import SourceDocument
@@ -104,6 +105,30 @@ class SourceFetcher:
         meta: dict[str, Any] | None = None,
     ) -> Fetched:
         sha, path = self.raw.put(content)
+        for attempt in range(2):
+            try:
+                doc_id = self._upsert_document(
+                    source_id, url, sha, path, content, content_type, retrieved_at, status, meta
+                )
+                break
+            except IntegrityError:
+                # a concurrent worker recorded the same bytes for the same URL first: reuse its row
+                if attempt:
+                    raise
+        return Fetched(doc_id, source_id, url, retrieved_at, sha, content, content_type)
+
+    def _upsert_document(
+        self,
+        source_id: str,
+        url: str,
+        sha: str,
+        path: str,
+        content: bytes,
+        content_type: str,
+        retrieved_at: datetime,
+        status: int,
+        meta: dict[str, Any] | None,
+    ) -> str:
         with self.db.session() as s:
             existing = s.scalars(
                 select(SourceDocument).where(
@@ -126,8 +151,7 @@ class SourceFetcher:
                 s.flush()
             else:  # same bytes re-retrieved: refresh the retrieval timestamp (freshness), keep one row
                 existing.retrieved_at = retrieved_at
-            doc_id = existing.id
-        return Fetched(doc_id, source_id, url, retrieved_at, sha, content, content_type)
+            return str(existing.id)
 
 
 def _aware(dt: datetime) -> datetime:

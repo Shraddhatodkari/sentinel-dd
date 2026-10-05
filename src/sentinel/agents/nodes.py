@@ -40,6 +40,8 @@ from sentinel.sources.catalog import SANCTIONS_SOURCES
 from sentinel.sources.http import SourceError
 from sentinel.timeutil import iso, utcnow
 
+# node name → coverage dimension it is responsible for (used when a degradable node fails outright)
+COVERAGE_KEY = {"resolve_entity": "resolution", "filings": "filings_text"}
 log = get_logger(__name__)
 
 
@@ -98,7 +100,8 @@ def traced(
                     self._event(state["case_id"], node, "failed", started, t0, {}, error)
                     METRICS.inc("agent_node_runs", node=node, status="failed")
                     raise NodeFailure(f"{node}: {error}") from exc
-                status, out = "degraded", {"coverage": {node: "unavailable"}, "errors": [f"{node}: {error}"]}
+                key = COVERAGE_KEY.get(node, node)
+                status, out = "degraded", {"coverage": {key: "unavailable"}, "errors": [f"{node}: {error}"]}
             detail = out.pop("_event", {})
             self._event(state["case_id"], node, status, started, t0, detail, error)
             METRICS.inc("agent_node_runs", node=node, status=status)

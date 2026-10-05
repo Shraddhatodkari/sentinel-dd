@@ -31,6 +31,9 @@ def test_ops_endpoints_and_security_headers(client):
     assert client.get("/health", headers={"x-request-id": "<script>"}).headers["x-request-id"] != "<script>"
     assert client.get("/").json()["api_docs"] == "/api/docs"
     assert client.get("/api/openapi.json").status_code == 200
+    docs = client.get("/api/docs")
+    assert "cdn.jsdelivr.net" in docs.headers["content-security-policy"]  # relaxed only for Swagger UI
+    assert "cdn.jsdelivr.net" not in h.headers["content-security-policy"]
 
 
 def test_authentication_flow(client):

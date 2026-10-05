@@ -102,7 +102,7 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - process e
     c = Container.build()
     token = os.environ.get("SENTINEL_MCP_TOKEN")
     if not token:
-        raise SystemExit("SENTINEL_MCP_TOKEN is required (JWT for a service account; see docs/mcp.md)")
+        raise SystemExit("SENTINEL_MCP_TOKEN is required (JWT for a service account; see docs/api.md#mcp)")
     principal, _, _ = c.tokens.verify(token)
     create_server(c, CaseService(c), principal).run(transport=args.transport)
 

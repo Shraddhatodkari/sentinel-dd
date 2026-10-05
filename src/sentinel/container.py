@@ -90,7 +90,11 @@ class Container:
         db = Database(s.database_url, echo=s.db_echo)
         if s.migrate_on_start if migrate is None else migrate:
             db.upgrade()
-        sync_source_catalog(db, s.enable_opensanctions_peps)
+        sync_source_catalog(
+            db,
+            s.enable_opensanctions_peps,
+            sla_overrides={"sanctions": s.sanctions_max_age_h, "pep": s.pep_max_age_h},
+        )
         http = ResilientHttpClient(
             s.sec_user_agent,
             s.http_timeout_s,
@@ -123,7 +127,7 @@ class Container:
             reference=ReferenceDataService(db, fetcher),
             embedder=embedder,
             case_index=CaseIndex(db, embedder, s.chunk_size, s.chunk_overlap),
-            llm=MeteredLLM(llm or build_llm(s), db, s.llm_price_per_mtok),
+            llm=MeteredLLM(llm or build_llm(s), db, s.llm_price_per_mtok, s.llm_max_tokens),
             dlp=dlp,
             guardrails=Guardrails(dlp),
             grounding=GroundingChecker(s.grounding_threshold),

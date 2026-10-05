@@ -62,6 +62,14 @@ INJECTION_PATTERNS: list[tuple[re.Pattern[str], float, str]] = [
 PROHIBITED_OUTPUT = [
     (re.compile(r"\b(guaranteed|100% safe|no risk whatsoever)\b", re.I), "overclaiming"),
     (re.compile(r"\bthis constitutes legal advice\b", re.I), "legal_advice"),
+    (
+        re.compile(
+            r"\b(?:is (?:definitely|certainly|confirmed as) (?:a )?sanctioned|confirmed sanctions match|"
+            r"(?:this|which) (?:is|constitutes) a regulatory determination)\b",
+            re.I,
+        ),
+        "determination_claim",
+    ),
 ]
 
 _B64 = re.compile(r"[A-Za-z0-9+/]{40,}={0,2}")

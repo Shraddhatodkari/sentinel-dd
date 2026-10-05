@@ -128,3 +128,29 @@ def test_stale_list_detection(container):
 
 def test_fixture_dir_exists():
     assert Path(FIXTURES).is_dir()
+
+
+def test_freshness_sla_is_configurable(workdir):
+    from sentinel.eval.harness import offline_container
+    from sentinel.ingestion.reference import freshness
+
+    c = offline_container(workdir, sanctions_max_age_h=12, pep_max_age_h=48)
+    sla = {f["source_id"]: f["freshness_sla_h"] for f in freshness(c.db)}
+    assert sla["ofac_sdn"] == 12 and sla["us_congress"] == 48 and sla["sec_edgar"] is None
+    c.db.engine.dispose()
+
+
+def test_llm_output_token_ceiling():
+    from sentinel.llm.base import Message
+    from sentinel.llm.extractive import ExtractiveLLM
+    from sentinel.llm.metering import MeteredLLM
+
+    seen = {}
+
+    class Spy(ExtractiveLLM):
+        def complete(self, messages, *, system=None, max_tokens=1024, temperature=0.0):
+            seen["max_tokens"] = max_tokens
+            return super().complete(messages, system=system, max_tokens=max_tokens, temperature=temperature)
+
+    MeteredLLM(Spy(), None, {}, max_tokens_cap=256).complete([Message("user", "hello")], max_tokens=2048)
+    assert seen["max_tokens"] == 256
