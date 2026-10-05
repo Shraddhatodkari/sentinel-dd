@@ -36,18 +36,23 @@ def test_edgar_search_profile_facts_and_filings(container):
 
 
 def test_parsers_edge_cases():
+    """Markup variants seen across filers, built from records in Apple's recorded filings (Exhibit 21 row,
+    Form 4 reporting owner): header rows skipped, duplicate rows collapsed, boolean flags as "1" or "true"."""
     rows = parse_exhibit21(
-        "<table><tr><td>Name of Subsidiary</td><td>Jurisdiction</td></tr>"
-        "<tr><td>Foo Ltd</td><td>Ireland</td></tr><tr><td>Foo Ltd</td><td>Ireland</td></tr></table>"
+        "<table><tr><td>Name of Subsidiary</td><td>Jurisdiction of Incorporation</td></tr>"
+        "<tr><td>Apple Asia Limited</td><td>Hong Kong</td></tr><tr><td>Apple Asia Limited</td><td>Hong Kong</td></tr>"
+        "</table>"
     )
-    assert rows == [{"name": "Foo Ltd", "jurisdiction": "Ireland"}]
+    assert rows == [{"name": "Apple Asia Limited", "jurisdiction": "Hong Kong"}]
     xml = (
-        "<ownershipDocument><reportingOwner><reportingOwnerId><rptOwnerName>Doe Jane</rptOwnerName>"
+        "<ownershipDocument><reportingOwner><reportingOwnerId><rptOwnerName>COOK TIMOTHY D</rptOwnerName>"
         "</reportingOwnerId><reportingOwnerRelationship><isDirector>1</isDirector><isOfficer>true</isOfficer>"
-        "<officerTitle>CFO</officerTitle></reportingOwnerRelationship></reportingOwner></ownershipDocument>"
+        "<officerTitle>Executive Chair</officerTitle></reportingOwnerRelationship></reportingOwner>"
+        "</ownershipDocument>"
     )
     ins = parse_form4(xml, "2026-01-01", "acc", "doc", "url")
-    assert ins[0].roles == ["director", "officer"] and ins[0].officer_title == "CFO"
+    assert ins[0].name == "COOK TIMOTHY D"
+    assert ins[0].roles == ["director", "officer"] and ins[0].officer_title == "Executive Chair"
     assert html_to_text(b"<html><style>x{}</style><p>Hi</p><div style='display:none'>secret</div></html>") == "Hi"
     assert financial_facts({}) == {}
 

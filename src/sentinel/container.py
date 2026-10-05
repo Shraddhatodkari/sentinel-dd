@@ -6,6 +6,7 @@ substitute any component (HTTP transport, LLM, database) in one place.
 
 from __future__ import annotations
 
+import contextlib
 import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -107,12 +108,13 @@ class Container:
         edgar, gleif = EdgarConnector(fetcher), GleifConnector(fetcher)
         embedder = build_embedder(s.embedding_backend, s.embedding_dim)
         dlp = DLPEngine(secret=s.jwt_secret.get_secret_value())
+        audit = AuditLog(db)
 
         def is_revoked(jti: str) -> bool:
             with db.session() as sess:
                 return sess.get(RevokedToken, jti) is not None
 
-        registry = ModelRegistry(s.model_dir)
+        registry = ModelRegistry(s.model_dir, s.mlflow_tracking_uri)
         c = cls(
             settings=s,
             db=db,
@@ -121,10 +123,10 @@ class Container:
             edgar=edgar,
             gleif=gleif,
             doj=DojConnector(fetcher),
-            gdelt=GdeltConnector(fetcher) if s.enable_gdelt else None,
+            gdelt=GdeltConnector(fetcher, s.gdelt_timespan) if s.enable_gdelt else None,
             resolver=EntityResolver(db, edgar, gleif),
             screening=ScreeningIndex(db),
-            reference=ReferenceDataService(db, fetcher),
+            reference=ReferenceDataService(db, fetcher, audit=audit),
             embedder=embedder,
             case_index=CaseIndex(db, embedder, s.chunk_size, s.chunk_overlap),
             llm=MeteredLLM(llm or build_llm(s), db, s.llm_price_per_mtok, s.llm_max_tokens),
@@ -132,7 +134,7 @@ class Container:
             guardrails=Guardrails(dlp),
             grounding=GroundingChecker(s.grounding_threshold),
             policy=PolicyEngine(s.policy_version, s.auto_clear_enabled, min_grounding=s.grounding_threshold),
-            audit=AuditLog(db),
+            audit=audit,
             tokens=TokenService(
                 s.jwt_secret.get_secret_value(), s.jwt_algorithm, s.jwt_ttl_minutes, s.jwt_issuer, is_revoked
             ),
@@ -141,6 +143,15 @@ class Container:
         )
         c.reload_peer_model()
         return c
+
+    def close(self) -> None:
+        """Release external resources (checkpointer connection, HTTP pool, DB connection pool). Idempotent."""
+        conn = getattr(self.checkpointer, "conn", None)
+        if conn is not None:
+            with contextlib.suppress(Exception):  # best effort on shutdown
+                conn.close()
+        self.http.close()
+        self.db.engine.dispose()
 
     def reload_peer_model(self) -> None:
         try:

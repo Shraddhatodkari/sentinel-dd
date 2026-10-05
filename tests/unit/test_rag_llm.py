@@ -109,12 +109,14 @@ def test_extractive_backend_and_structured_output():
         [
             Message(
                 "user",
-                "QUESTION: who owns acme\n\nCONTEXT:\n[d#0] T > H: Acme is owned by Zed Corp. "
-                "Sky is blue.\n[d#1] Other.",
+                "QUESTION: which entity consolidates apple operations international\n\nCONTEXT:\n"
+                "[d#0] GLEIF > Level 2: APPLE OPERATIONS INTERNATIONAL LIMITED is directly consolidated by Apple Inc. "
+                "The record was last updated by the managing LOU.\n[d#1] Exhibit 21 lists Braeburn Capital, Inc.",
             )
         ]
     ).text
-    assert "Zed Corp" in out and "[d#0]" in out and "Sky" not in out and "T > H" not in out
+    assert "directly consolidated by Apple Inc." in out and "[d#0]" in out
+    assert "managing LOU" not in out and "GLEIF > Level 2" not in out
     assert llm.complete([Message("user", "QUESTION: x\nCONTEXT:\n")]).text.startswith("INSUFFICIENT_EVIDENCE")
     assert ExtractiveLLM(scripted={"Plan": lambda m: {"steps": ["a"], "n": 2}}).complete_structured(
         [Message("user", "x")], Plan
@@ -163,6 +165,13 @@ def test_router_fallback_breaker_and_factory():
         Settings(_env_file=None, llm_provider="anthropic", anthropic_api_key="k", llm_fallbacks=["extractive"])
     )
     assert [c.provider for c in r2.clients] == ["anthropic", "extractive"]
+    # the extractive backend is appended as last resort even when no fallback is configured
+    r3 = build_llm(Settings(_env_file=None, llm_provider="anthropic", anthropic_api_key="k"))
+    assert [c.provider for c in r3.clients] == ["anthropic", "extractive"]
+    from sentinel.observability.metrics import METRICS
+
+    LLMRouter([_Fail(), ExtractiveLLM()]).complete([Message("user", "QUESTION: a\nCONTEXT:\n[x#0] a b c")])
+    assert "llm_errors_total" in METRICS.render_prometheus() and "llm_fallbacks_total" in METRICS.render_prometheus()
 
 
 def test_anthropic_and_openai_clients_with_stubs(monkeypatch):

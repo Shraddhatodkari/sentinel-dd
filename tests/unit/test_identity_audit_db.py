@@ -4,7 +4,6 @@ import jwt
 import pytest
 from sqlalchemy import select, text
 
-from sentinel.db.base import Database
 from sentinel.db.migrate import current_revision, head_revision
 from sentinel.db.models import Case, Review
 from sentinel.security.audit import AuditLog
@@ -96,9 +95,8 @@ def test_user_service_lockout_and_validation(container):
         us.set_active("ghost", True)
 
 
-def test_audit_chain_append_only_and_tamper_detection(tmp_path):
-    db = Database(f"sqlite:///{tmp_path}/a.db")
-    db.upgrade()
+def test_audit_chain_append_only_and_tamper_detection(make_db):
+    db = make_db("a.db")
     log = AuditLog(db)
     for i in range(6):
         rec = log.append("alice", "case.created", "case", f"c{i}", {"i": i}, roles=["analyst"])
@@ -121,9 +119,8 @@ def test_audit_chain_append_only_and_tamper_detection(tmp_path):
     assert not res["intact"] and res["first_bad_seq"] == 3
 
 
-def test_migrations_constraints(tmp_path):
-    db = Database(f"sqlite:///{tmp_path}/m.db")
-    db.upgrade()
+def test_migrations_constraints(make_db):
+    db = make_db("m.db")
     assert current_revision(db.engine) == head_revision(db.engine) == "0002_revoked_tokens"
     from alembic import command
 

@@ -54,6 +54,8 @@ class Settings(BaseSettings):
         default_factory=lambda: {"claude-sonnet-4-5": (3.0, 15.0), "gpt-4o-mini": (0.15, 0.6)}
     )
 
+    mlflow_tracking_uri: str | None = None  # optional: mirror model-registry metrics/params to MLflow
+
     # ------------------------------------------------------------------ external sources
     sec_user_agent: str = "Sentinel-DD compliance-research admin@example.com"  # SEC requires a contact UA
     http_timeout_s: float = 30.0
@@ -64,6 +66,8 @@ class Settings(BaseSettings):
     sanctions_max_age_h: int = 36  # sanctions-list freshness SLA (h); stale lists force review (TPRM-DAT-03)
     pep_max_age_h: int = 24 * 14  # PEP-list freshness SLA (h)
     enable_gdelt: bool = True
+    # GDELT window: in testing, 3-month windows returned an empty {} while a 1-week window returned articles
+    gdelt_timespan: str = Field("1week", pattern=r"^\d+(min|h|hours|d|days|week|weeks|month|months)$")
     enable_opensanctions_peps: bool = False  # OpenSanctions is CC BY-NC: enable only with a commercial licence
 
     # ------------------------------------------------------------------ retrieval
@@ -91,13 +95,12 @@ class Settings(BaseSettings):
 
     # ------------------------------------------------------------------ governance / execution
     policy_version: str = "tprm-policy-2026.10"
-    scorecard_version: str = "scorecard-2026.10"
     auto_clear_enabled: bool = False  # conservative default: every case gets a human decision
     max_agent_steps: int = 40
     runner_mode: Literal["background", "inline"] = "background"
     runner_workers: int = 2
 
-    @field_validator("anthropic_api_key", "openai_api_key", "vertex_project", mode="before")
+    @field_validator("anthropic_api_key", "openai_api_key", "vertex_project", "mlflow_tracking_uri", mode="before")
     @classmethod
     def _blank_is_unset(cls, v: object) -> object:
         return None if isinstance(v, str) and not v.strip() else v

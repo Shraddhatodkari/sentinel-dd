@@ -12,6 +12,14 @@ Not executed in CI (requires GPU + model weights); covered by the dataset & LoRA
 from __future__ import annotations
 
 import argparse
+import os
+
+
+def _mlflow_uri() -> str | None:
+    uri = os.environ.get("MLFLOW_TRACKING_URI") or os.environ.get("SENTINEL_MLFLOW_TRACKING_URI")
+    if uri:
+        os.environ["MLFLOW_TRACKING_URI"] = uri  # the transformers MLflow callback reads this variable
+    return uri
 
 
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover
@@ -81,7 +89,7 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
             eval_strategy="epoch",
             save_strategy="epoch",
             logging_steps=10,
-            report_to=["mlflow"],
+            report_to=["mlflow"] if _mlflow_uri() else [],
             lr_scheduler_type="cosine",
             warmup_ratio=0.03,
         ),

@@ -1,12 +1,12 @@
 [
   {
-    "run_id": "4c569b9677b14c6f90786ee8ad40c2ef",
+    "run_id": "b9f2385c653e45319b0842734c827fc6",
     "source_id": "ofac_sdn",
     "status": "succeeded",
     "unchanged": false,
     "records_loaded": 19488,
     "records_rejected": 0,
-    "document_id": "34a1cf9aa7434db48f728c12bf86e6cd",
+    "document_id": "088048a1b19447ba976cb58153c84c69",
     "error": null,
     "quality": {
       "records_in": 19488,
@@ -15,22 +15,22 @@
       "pct_with_aliases": 0.512,
       "pct_with_identifiers": 0.422,
       "entity_types": {
-        "aircraft": 342,
-        "vessel": 1539,
+        "individual": 7570,
         "entity": 10037,
-        "individual": 7570
+        "aircraft": 342,
+        "vessel": 1539
       },
       "version_key": "49215a8e749832b3"
     }
   },
   {
-    "run_id": "45896449ef4f4fb7887bd9af59942788",
+    "run_id": "99fc4cc36f814a74864dab42164d8b59",
     "source_id": "un_sc",
     "status": "succeeded",
     "unchanged": false,
     "records_loaded": 1011,
     "records_rejected": 0,
-    "document_id": "9bef6eff0e3b4c6d84dd73ec9baa081f",
+    "document_id": "1c41a3af6ba442fca142cbf089f07045",
     "error": null,
     "quality": {
       "records_in": 1011,
@@ -39,20 +39,20 @@
       "pct_with_aliases": 0.708,
       "pct_with_identifiers": 0.0,
       "entity_types": {
-        "entity": 275,
-        "individual": 736
+        "individual": 736,
+        "entity": 275
       },
       "version_key": "a749134d99220941"
     }
   },
   {
-    "run_id": "02be22608a0a4af7b78ab6efd279fd78",
+    "run_id": "8bdd01b1967d4293a3bf68ba3483fe47",
     "source_id": "uk_sanctions",
     "status": "succeeded",
     "unchanged": false,
     "records_loaded": 6370,
     "records_rejected": 0,
-    "document_id": "516c02979e28418c9f2adb0c547341a1",
+    "document_id": "f44956c84f9c4df38306590d8a739ab5",
     "error": null,
     "quality": {
       "records_in": 6370,
@@ -61,21 +61,21 @@
       "pct_with_aliases": 0.46,
       "pct_with_identifiers": 0.091,
       "entity_types": {
-        "vessel": 671,
+        "individual": 4054,
         "entity": 1645,
-        "individual": 4054
+        "vessel": 671
       },
       "version_key": "819d6a92c7e9a08c"
     }
   },
   {
-    "run_id": "ed4ed347931245f093f58e6ed02044d8",
+    "run_id": "e952161c01c6491781ce8b2be301b482",
     "source_id": "eu_fsf",
     "status": "succeeded",
     "unchanged": false,
     "records_loaded": 6241,
     "records_rejected": 0,
-    "document_id": "aefe4d372aca4656868f74ee0fa50a5d",
+    "document_id": "353c70a819584faf9b0fd56452206d7f",
     "error": null,
     "quality": {
       "records_in": 6241,
@@ -84,20 +84,20 @@
       "pct_with_aliases": 0.881,
       "pct_with_identifiers": 0.32,
       "entity_types": {
-        "entity": 1776,
-        "individual": 4465
+        "individual": 4465,
+        "entity": 1776
       },
       "version_key": "ba8fbd1b114e7b1a"
     }
   },
   {
-    "run_id": "5b3f4c02716c4598aec4e861d9ac96aa",
+    "run_id": "dcf84c36cd994189a77a2a4c4777bb1f",
     "source_id": "us_congress",
     "status": "succeeded",
     "unchanged": false,
     "records_loaded": 539,
     "records_rejected": 0,
-    "document_id": "5c517cad1d304bacadc92c48feaf6205",
+    "document_id": "e40021c733664389ad541477d5922dd4",
     "error": null,
     "quality": {
       "records_in": 539,

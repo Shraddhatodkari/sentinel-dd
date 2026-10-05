@@ -6,7 +6,6 @@ import time
 from typing import Any
 
 from sentinel.llm.base import LLMClient, LLMError, LLMResponse, Message, Usage
-from sentinel.observability.metrics import METRICS
 
 
 class AnthropicClient(LLMClient):
@@ -50,8 +49,8 @@ class AnthropicClient(LLMClient):
         delay = 1.0
         for attempt in range(self.max_retries + 1):
             try:
-                with METRICS.timer("llm_latency_seconds", provider=self.provider):
-                    resp = self._client.messages.create(**kwargs)
+                # latency, tokens, cost and errors are metered once, in MeteredLLM / LLMRouter
+                resp = self._client.messages.create(**kwargs)
                 text = "".join(
                     getattr(block, "text", "") for block in resp.content if getattr(block, "type", "") == "text"
                 )
@@ -59,12 +58,10 @@ class AnthropicClient(LLMClient):
                     input_tokens=getattr(resp.usage, "input_tokens", 0),
                     output_tokens=getattr(resp.usage, "output_tokens", 0),
                 )
-                METRICS.inc("llm_tokens", usage.total, provider=self.provider)
                 return LLMResponse(text, self.provider, self.model, usage, getattr(resp, "stop_reason", None))
             except Exception as exc:  # SDK raises typed errors; retry transient ones
                 status = getattr(exc, "status_code", None)
                 retryable = status in (408, 409, 429, 500, 502, 503, 529) or status is None
-                METRICS.inc("llm_errors", provider=self.provider)
                 if not retryable or attempt == self.max_retries:
                     raise LLMError(f"Anthropic call failed: {exc}") from exc
                 time.sleep(delay)

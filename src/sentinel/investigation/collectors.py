@@ -18,7 +18,7 @@ from sentinel.investigation.evidence import EvidenceWriter
 from sentinel.investigation.resolution import Resolution
 from sentinel.risk.financial import compute_indicators, financial_stress_points
 from sentinel.risk.media import SEVERITY_RANK, TAXONOMY_VERSION, classify, distinctive_tokens, subject_role
-from sentinel.screening import ScreeningHit, ScreeningIndex
+from sentinel.screening import SCREENING_VERSION, ScreeningHit, ScreeningIndex
 from sentinel.sources.edgar import EdgarConnector, EdgarProfile, financial_facts
 from sentinel.sources.gleif import GleifConnector, LeiRecord
 from sentinel.sources.http import SourceError
@@ -320,7 +320,8 @@ def collect_media(
         r.errors.append(f"doj_press: {exc}")
     if gdelt is not None:
         try:
-            items += gdelt.search(search_name)
+            # distinctive short name, as for DOJ: an exact legal-form phrase ("BOEING CO") rarely appears in news
+            items += gdelt.search(short)
             statuses["gdelt"] = "ok"
         except (SourceError, ValueError) as exc:
             statuses["gdelt"] = "unavailable"
@@ -389,7 +390,7 @@ def collect_media(
                 subject_role=role,
             )
     r.detail = {
-        "queried": {"doj_press": short, "gdelt": search_name},
+        "queried": {"doj_press": short, "gdelt": short},
         "sources": statuses,
         "items_retrieved": len(items),
         "relevant_items": len(r.evidence_ids),
@@ -539,7 +540,7 @@ def collect_screening(
             severity,
             h.score,
             [ev.id],
-            "screening:rapidfuzz-v1",
+            SCREENING_VERSION,
             role=h.query_role,
             source=h.source_id,
             method=h.method,

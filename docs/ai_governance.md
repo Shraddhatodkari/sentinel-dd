@@ -8,8 +8,9 @@
    same citation grounding check; ungrounded output lowers the report grounding score and triggers TPRM-AI-01.
 2. **LLMs do not make decisions.** Risk scores come from a versioned scorecard; outcomes from a deterministic
    policy engine; final decisions from an authorised human. No agent or tool can record a review decision.
-3. **Everything is versioned and reproducible.** Scorecard, policy, jurisdiction policy, media taxonomy, screening
-   method, peer model and prompt versions are stored with each assessment.
+3. **Everything is versioned and reproducible.** Scorecard, jurisdiction policy, media taxonomy, screening method,
+   peer model, prompt and LLM versions are stored with each assessment (`model_versions`); the policy version with each
+   policy decision.
 4. **Abstain rather than guess.** Research answers without sufficient evidence return `INSUFFICIENT_EVIDENCE`.
 
 ## Where AI/ML is used
@@ -32,16 +33,20 @@
   evaluates gates (minimum sample size, anomaly rate band, seed stability), registers with lineage (document ids of
   the frames) and promotes only if gates pass and it is not older than the current champion.
 * The registry refuses to promote a model to production unless it is marked `provenance=real` with lineage, and verifies the artefact SHA-256 on every load.
+* SFT export: `sentinel ml sft-export --as <auditor> --out var/sft` writes a DLP-masked chat dataset from
+  human-approved cases only (research use; no fine-tuned model ships).
 * Drift: `sentinel ml drift --year Y` computes PSI per feature against the model's reference sample; exit code 2
   recommends retraining.
 
 ## LLM operations
 
-* Provider chain: primary + fallbacks (`SENTINEL_LLM_FALLBACKS`), extractive last; failures counted
-  (`llm_errors`, `llm_fallbacks`).
+* Provider chain: primary + fallbacks (`SENTINEL_LLM_FALLBACKS`); the extractive backend is always appended last,
+  so a provider outage degrades narrative quality instead of failing cases; failures are counted (`llm_errors`,
+  `llm_fallbacks`).
 * Usage: every call is metered (provider, model, purpose, case, tokens, latency, cost) into `llm_usage` and Prometheus;
   output tokens are capped per call (`SENTINEL_LLM_MAX_TOKENS`).
-* Prompts live in `src/sentinel/prompts.py` with a `PROMPT_VERSION`; changes require re-running `sentinel eval`.
+* Prompts live in `src/sentinel/prompts.py` with a `PROMPT_VERSION` (recorded per assessment); changes require
+  re-running `sentinel eval`.
 * Prompt injection: input guardrails on user text; retrieved chunks are scanned and excluded if flagged.
 
 ## Human oversight

@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from sentinel.sources.fetcher import SourceFetcher
+from sentinel.sources.fetcher import Fetched, SourceFetcher
 from sentinel.timeutil import normalize_published
 
 DOJ_URL = "https://www.justice.gov/api/v1/press_releases.json"
@@ -64,19 +64,25 @@ class DojConnector:
 
 
 class GdeltConnector:
-    def __init__(self, fetcher: SourceFetcher) -> None:
+    def __init__(self, fetcher: SourceFetcher, timespan: str = "1week") -> None:
         self.f = fetcher
+        self.timespan = timespan
 
-    def search(self, term: str, limit: int = 75, timespan: str = "3months") -> list[MediaItem]:
+    def search(self, term: str, limit: int = 75, timespan: str | None = None) -> list[MediaItem]:
         params: dict[str, Any] = {
             "query": f'"{term}" sourcelang:english',
             "mode": "artlist",
             "format": "json",
             "maxrecords": limit,
             "sort": "datedesc",
-            "timespan": timespan,
+            "timespan": timespan or self.timespan,
         }
-        doc = self.f.get("gdelt", GDELT_URL, params)
+        return self.parse(self.f.get("gdelt", GDELT_URL, params))
+
+    @staticmethod
+    def parse(doc: Fetched) -> list[MediaItem]:
+        """Parse a DOC 2.0 ``artlist`` JSON response. ``{}`` is GDELT's "no results"; a non-JSON body (e.g. its
+        plain-text rate-limit notice served with HTTP 200 or 429) is an error, never an empty result."""
         if not doc.content.strip().startswith(b"{"):
             raise ValueError(f"GDELT returned a non-JSON response: {doc.text[:120]!r}")
         out = []

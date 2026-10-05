@@ -196,7 +196,8 @@ def test_dashboard_end_to_end(server, browser):
     assert "Chain intact" in p.get_by_test_id("verify-result").inner_text()
     au.shot("audit-trail")
     p.get_by_label("Main").get_by_role("link", name="Governance").click()
-    assert "tprm-policy" in p.get_by_test_id("versions").inner_text()
+    versions = p.get_by_test_id("versions").inner_text()
+    assert "tprm-policy" in versions and "scorecard-2026.10" in versions and "screening:rapidfuzz-v2" in versions
     au.shot("governance")
     p.get_by_label("Main").get_by_role("link", name="Data sources").click()
     assert "OFAC" in p.get_by_test_id("sources-table").inner_text()

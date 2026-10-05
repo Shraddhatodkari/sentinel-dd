@@ -242,19 +242,22 @@ def run_offline_suite(fixtures: Path = FIXTURES, seed: int = 7) -> dict[str, Any
     rnd = random.Random(seed)
     with tempfile.TemporaryDirectory() as tmp:
         c = offline_container(Path(tmp), fixtures)
-        loads = [r.to_dict() for r in c.reference.refresh_all("eval")]
-        metrics: dict[str, float] = {}
-        details: dict[str, Any] = {
-            "reference_loads": [{k: x[k] for k in ("source_id", "status", "records_loaded")} for x in loads]
-        }
-        m, d = eval_screening(c, rnd)
-        metrics |= m
-        details |= d
-        metrics |= eval_media_roles()
-        metrics |= eval_security(c)
-        m, d = eval_cases(c)
-        metrics |= m
-        details |= d
+        try:
+            loads = [r.to_dict() for r in c.reference.refresh_all("eval")]
+            metrics: dict[str, float] = {}
+            details: dict[str, Any] = {
+                "reference_loads": [{k: x[k] for k in ("source_id", "status", "records_loaded")} for x in loads]
+            }
+            m, d = eval_screening(c, rnd)
+            metrics |= m
+            details |= d
+            metrics |= eval_media_roles()
+            metrics |= eval_security(c)
+            m, d = eval_cases(c)
+            metrics |= m
+            details |= d
+        finally:
+            c.close()
     failures = []
     for k, thr in GATES.items():
         v = metrics.get(k, 0.0)

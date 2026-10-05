@@ -36,8 +36,8 @@ historical decisions before production.
 | | |
 |---|---|
 | Algorithm | scikit-learn `StandardScaler` + `IsolationForest` (300 trees, contamination 0.05, seed 7) |
-| Training data | SEC XBRL *frames* API for one fiscal year (Assets, Liabilities, NetIncomeLoss, Revenues): every US filer reporting all inputs. Live run 2026-10-04, year 2024: **3 722 filers** |
-| Features | liabilities/assets, return on assets, net margin, log10 assets (clipped) |
+| Training data | SEC XBRL *frames* API for one fiscal year (Assets, Liabilities, NetIncomeLoss, and Revenues or RevenueFromContractWithCustomerExcludingAssessedTax): every US filer reporting all inputs. Live run 2026-10-05, year 2024: **3 722 filers** |
+| Features | liabilities/assets, return on assets, net margin (ratios clipped to fixed ranges), log10 total assets |
 | Output | anomaly flag, anomaly score, per-feature peer percentiles, extreme features (≤ 2nd / ≥ 98th percentile) |
 | Gates | n ≥ 1 000; anomaly rate within [0.02, 0.10]; agreement with a differently-seeded model ≥ 0.80. Live run: anomaly rate 0.050, seed agreement 0.990 |
 | Use | `PEER_ANOMALY` factor (≤ 4 points) and an explanatory panel in the dashboard |
@@ -45,14 +45,14 @@ historical decisions before production.
 | Known limits | cross-industry peers (banks and insurers are structurally "unusual"); one fiscal year; reporting-concept differences between filers |
 | Monitoring | PSI per feature vs. reference sample (`sentinel ml drift`) |
 
-## 3. Watch-list screening (`screening:rapidfuzz-v1`)
+## 3. Watch-list screening (`screening:rapidfuzz-v2`)
 
 Normalisation (Unicode folding, punctuation, legal-form removal) → token blocking → RapidFuzz `token_sort_ratio` →
 organisation subset matching weighted by token IDF across all list names → discount when the most distinctive
 tokens differ → alias-strength (weak AKA ×0.92) and entity-type (×0.85) penalties → identifier matches (LEI, SWIFT,
 registration numbers) score 1.0. Review threshold 0.88 (configurable).
 
-Measured performance: see [evaluation.md](evaluation.md) — on the full official lists (33 649 records, 2026-10-04):
+Measured performance: see [evaluation.md](evaluation.md) — on the full official lists (33 649 records, 2026-10-05):
 recall 1.0 on 224 perturbed real list names, 0.9 % of 1 000 real SEC registrant names produced a potential match.
 Limitations: transliteration variants beyond Unicode folding (e.g. Cyrillic → Latin spellings that differ) are not
 generated; date-of-birth / nationality are not used to discount person matches.
@@ -67,5 +67,6 @@ can be mis-assigned.
 
 ## Versioning
 
-Every assessment stores `model_versions = {scorecard, peer_model, media_taxonomy, screening}` and the feature vector.
+Every assessment stores `model_versions = {scorecard, peer_model, media_taxonomy, screening, jurisdiction_policy, prompt,
+llm}` and the feature vector.
 Policy decisions store the policy version. Changing any of them requires a version bump and a new evaluation run.

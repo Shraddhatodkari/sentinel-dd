@@ -52,8 +52,8 @@ decisions and audit verification — see [evaluation.md](evaluation.md#5-live-en
 | `deployment.yaml` | Deployment (non-root, read-only root FS, dropped capabilities, seccomp, probes on `/ready` and `/health`), Service, HPA, PodDisruptionBudget, NetworkPolicy (ingress from the ingress namespace; egress to PostgreSQL and HTTPS/DNS) |
 
 Order: create Secret + ConfigMap → PVC → migration Job → Deployment. Replace `ghcr.io/your-org/sentinel-dd`
-with your registry. The manifests are syntactically validated in this repository but have not been applied to a
-live cluster for this release.
+with your registry. The manifests are parsed and structurally checked by `tests/unit/test_infra.py` (kinds, image
+tags, security contexts, probes, entrypoint arguments) but have not been applied to a live cluster for this release.
 
 ### Multi-replica considerations
 

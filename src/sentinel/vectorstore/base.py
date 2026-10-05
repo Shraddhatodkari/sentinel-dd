@@ -52,8 +52,8 @@ class VectorStore(ABC):
 
 
 class InMemoryVectorStore(VectorStore):
-    """Exact cosine search over a contiguous matrix. Suitable to ~1e5 chunks; swap for
-    Qdrant/pgvector (same interface) beyond that."""
+    """Exact cosine search over a contiguous matrix. Used for per-case indexes rebuilt from persisted chunks (small
+    by construction); a networked store implementing ``VectorStore`` would be needed for corpus-wide search."""
 
     def __init__(self, dim: int) -> None:
         self.dim = dim

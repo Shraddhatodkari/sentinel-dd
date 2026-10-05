@@ -33,3 +33,11 @@ class RawStore:
 
     def exists(self, sha: str) -> bool:
         return self._path(sha).exists()
+
+    def verify(self, sha: str) -> bool:
+        """True only if the stored bytes are present *and* hash to ``sha``."""
+        try:
+            self.get(sha)
+        except (OSError, ValueError, EOFError):
+            return False
+        return True

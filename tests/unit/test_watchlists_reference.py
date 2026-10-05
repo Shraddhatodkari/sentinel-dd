@@ -65,6 +65,8 @@ def test_refresh_is_idempotent_versioned_and_tracks_freshness(container):
     before = container.screening.size
     run = container.reference.refresh("un_sc", "test")
     assert run.status == "succeeded" and run.unchanged and run.records_loaded == 0
+    rec = container.audit.records(resource_id="un_sc")[0]
+    assert rec["action"] == "source.refresh_succeeded" and rec["actor"] == "test" and rec["details"]["unchanged"]
     container.screening.ensure_loaded()
     assert container.screening.size == before
     fresh = {f["source_id"]: f for f in freshness(container.db)}
@@ -96,6 +98,8 @@ def test_refresh_failure_keeps_previous_version(container, monkeypatch):
             select(IngestionRun).where(IngestionRun.source_id == "eu_fsf").order_by(IngestionRun.started_at.desc())
         ).first()
     assert n0 == n1 > 0 and last.status == "failed"
+    failed = container.audit.records(resource_id="eu_fsf")
+    assert failed and failed[0]["action"] == "source.refresh_failed" and "corrupt file" in failed[0]["details"]["error"]
 
 
 def test_quality_gate_blocks_truncated_list(container, monkeypatch):
@@ -137,7 +141,7 @@ def test_freshness_sla_is_configurable(workdir):
     c = offline_container(workdir, sanctions_max_age_h=12, pep_max_age_h=48)
     sla = {f["source_id"]: f["freshness_sla_h"] for f in freshness(c.db)}
     assert sla["ofac_sdn"] == 12 and sla["us_congress"] == 48 and sla["sec_edgar"] is None
-    c.db.engine.dispose()
+    c.close()
 
 
 def test_llm_output_token_ceiling():
@@ -154,3 +158,13 @@ def test_llm_output_token_ceiling():
 
     MeteredLLM(Spy(), None, {}, max_tokens_cap=256).complete([Message("user", "hello")], max_tokens=2048)
     assert seen["max_tokens"] == 256
+
+
+def test_configuration_docs_cover_every_setting():
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    res = subprocess.run([sys.executable, "scripts/gen_config_docs.py", "--check"], cwd=root, capture_output=True)
+    assert res.returncode == 0, res.stderr.decode()

@@ -46,6 +46,8 @@ def main() -> None:
         for e in a.entities:
             d = svc.create(p, e)
             print(e, d["status"], d.get("risk_band"), d.get("error"))
+        svc.shutdown()
+        c.close()
 
 
 if __name__ == "__main__":

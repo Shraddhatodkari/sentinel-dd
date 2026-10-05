@@ -71,8 +71,9 @@ class LLMRouter(LLMClient):
                 resp = client.complete(messages, system=system, max_tokens=max_tokens, temperature=temperature)
                 breaker.record_success()
                 return resp
-            except LLMError as exc:
+            except Exception as exc:  # provider SDKs raise their own types; any failure moves to the next provider
                 breaker.record_failure()
+                METRICS.inc("llm_errors", provider=client.provider)
                 METRICS.inc("llm_fallbacks", provider=client.provider)
                 log_event(log, "llm_provider_failed", provider=client.provider, error=str(exc))
                 errors.append(f"{client.provider}: {exc}")
@@ -115,6 +116,8 @@ def build_client(provider: str, settings: Settings) -> LLMClient:
 
 
 def build_llm(settings: Settings) -> LLMClient:
-    providers = [settings.llm_provider, *[p for p in settings.llm_fallbacks if p != settings.llm_provider]]
+    # the extractive backend (no generation, no network) is always the last resort, so a provider outage degrades
+    # narrative quality instead of failing cases
+    providers = list(dict.fromkeys([settings.llm_provider, *settings.llm_fallbacks, "extractive"]))
     clients = [build_client(p, settings) for p in providers]
     return clients[0] if len(clients) == 1 else LLMRouter(clients)

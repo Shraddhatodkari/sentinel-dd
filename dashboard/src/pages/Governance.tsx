@@ -19,6 +19,9 @@ interface AgentSpec {
 interface Governance {
   policy_version: string;
   scorecard_version: string;
+  prompt_version: string;
+  media_taxonomy: string;
+  screening_method: string;
   auto_clear_enabled: boolean;
   screening_threshold: number;
   grounding_threshold: number;
@@ -48,6 +51,9 @@ export function GovernancePage() {
           <dl className="kv" data-testid="versions">
             <dt>Policy</dt><dd>{data.policy_version}</dd>
             <dt>Scorecard</dt><dd>{data.scorecard_version}</dd>
+            <dt>Screening</dt><dd>{data.screening_method}</dd>
+            <dt>Media taxonomy</dt><dd>{data.media_taxonomy}</dd>
+            <dt>Prompts</dt><dd>{data.prompt_version}</dd>
             <dt>Peer model</dt><dd>{data.peer_model ?? <span className="muted">not trained</span>}</dd>
             <dt>LLM</dt><dd>{data.llm.provider} · {data.llm.model}</dd>
           </dl>

@@ -20,7 +20,7 @@ jobs:
       - name: Lint & format
         run: ruff check src tests scripts && ruff format --check src tests scripts
       - name: Type-check
-        run: mypy src
+        run: mypy src scripts && python scripts/gen_config_docs.py --check
 
   dashboard:
     runs-on: ubuntu-latest
@@ -81,7 +81,7 @@ jobs:
         with: {python-version: "3.12"}
       - run: pip install -e ".[dev]"
       - name: SAST (bandit)
-        run: bandit -r src -ll -q
+        run: bandit -r src scripts -ll -q
       - name: Dependency vulnerabilities (pip-audit)
         run: pip-audit --progress-spinner off --skip-editable
       - name: Secret scan (gitleaks)

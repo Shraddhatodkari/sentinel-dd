@@ -17,9 +17,19 @@ Rebuilt on real authoritative data. Breaking changes to the API (`/api/v1`), sto
 - CLI (`sentinel db|users|sources|ml|investigate|audit|eval`), live smoke tests, full-list screening evaluation.
 - Container image with dashboard, PostgreSQL compose stack, Kubernetes migration Job and refresh CronJob.
 
+- `sentinel ml drift`, `sentinel ml sft-export` (DLP-masked memo dataset from human-approved cases),
+  `sentinel eval --screening-live`; generated configuration reference with a drift check; structural tests for the
+  Kubernetes manifests, Compose file, CI workflow and version strings.
+
 ### Changed
-- Default LLM backend is extractive (no external calls); generative providers are optional and grounding-checked.
+- Default LLM backend is extractive (no external calls); generative providers are optional and grounding-checked;
+  the extractive backend is always the last fallback.
 - Auto-clear disabled by default.
+- Screening method `screening:rapidfuzz-v2` (IDF-weighted organisation matching); every assessment records the
+  scorecard, screening, media-taxonomy, jurisdiction-policy, prompt, LLM and peer-model versions.
+- Rate-limit and CORS settings apply when the app is started by uvicorn `--factory` (container image).
+- Reference-list refreshes are audited whatever triggered them (API, CLI, CronJob).
+- Scorecard version is a code constant (the `SENTINEL_SCORECARD_VERSION` setting was removed).
 
 ### Removed
 - Fictional corpus, entity registry and watch-list; synthetic-label risk classifier; in-memory vector stores and

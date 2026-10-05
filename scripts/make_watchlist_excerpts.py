@@ -15,8 +15,10 @@ import hashlib
 import io
 import json
 import random
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # serialisation only; parsing uses defusedxml
 from pathlib import Path
+
+import defusedxml.ElementTree as SafeET
 
 from sentinel.sources.catalog import OFAC_BASE, SOURCES
 from sentinel.sources.replay import write_cassette
@@ -116,7 +118,7 @@ def eu(raw: Path, out: Path, rnd: random.Random) -> None:
 
 def un(raw: Path, out: Path, rnd: random.Random) -> None:
     full = (raw / "un.xml").read_bytes()
-    root = ET.fromstring(full)  # noqa: S314
+    root = SafeET.fromstring(full)
     for group in ("INDIVIDUALS", "ENTITIES"):
         cont = root.find(group)
         if cont is None:

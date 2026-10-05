@@ -15,7 +15,7 @@
  },
  "cases": {
   "Apple Inc.": {
-   "case_id": "case-64a5227830d0",
+   "case_id": "case-8e202fef9ae3",
    "status": "awaiting_review",
    "resolved_name": "Apple Inc.",
    "risk_band": "LOW",
@@ -25,10 +25,11 @@
    "rules": [
     "TPRM-GOV-01"
    ],
-   "evidence": 41,
+   "evidence": 52,
    "signals": 8,
    "evidence_sources": [
     "doj_press",
+    "gdelt",
     "gleif",
     "sec_edgar"
    ],
@@ -51,7 +52,7 @@
    "seconds": null
   },
   "The Boeing Company": {
-   "case_id": "case-a5df3c531a24",
+   "case_id": "case-d65932107990",
    "status": "awaiting_review",
    "resolved_name": "BOEING CO",
    "risk_band": "MEDIUM",
@@ -80,7 +81,7 @@
     "screening": "ok"
    },
    "errors": [
-    "gdelt: retries exhausted (429) for https://api.gdeltproject.org/api/v2/doc/doc?format=json&maxrecords=75&mode=artlist&query=%22BOEING+CO%22+sourcelang%3Aenglish&sort=datedesc&timespan=3months"
+    "gdelt: retries exhausted (429) for https://api.gdeltproject.org/api/v2/doc/doc?format=json&maxrecords=75&mode=artlist&query=%22boeing%22+sourcelang%3Aenglish&sort=datedesc&timespan=1week"
    ],
    "peer": {
     "available": true,
@@ -91,7 +92,7 @@
    "seconds": null
   },
   "Sberbank": {
-   "case_id": "case-1db9670cb4be",
+   "case_id": "case-590c4f877747",
    "status": "awaiting_review",
    "resolved_name": "\u041f\u0443\u0431\u043b\u0438\u0447\u043d\u043e\u0435 \u0430\u043a\u0446\u0438\u043e\u043d\u0435\u0440\u043d\u043e\u0435 \u043e\u0431\u0449\u0435\u0441\u0442\u0432\u043e \"\u0421\u0431\u0435\u0440\u0431\u0430\u043d\u043a \u0420\u043e\u0441\u0441\u0438\u0438\"",
    "risk_band": "HIGH",
@@ -121,7 +122,7 @@
     "screening": "ok"
    },
    "errors": [
-    "gdelt: retries exhausted (429) for https://api.gdeltproject.org/api/v2/doc/doc?format=json&maxrecords=75&mode=artlist&query=%22Sberbank%22+sourcelang%3Aenglish&sort=datedesc&timespan=3months"
+    "gdelt: retries exhausted (429) for https://api.gdeltproject.org/api/v2/doc/doc?format=json&maxrecords=75&mode=artlist&query=%22sberbank%22+sourcelang%3Aenglish&sort=datedesc&timespan=1week"
    ],
    "peer": {
     "available": false,
@@ -132,7 +133,7 @@
    "seconds": null
   },
   "Siemens AG": {
-   "case_id": "case-93c2b0dc9538",
+   "case_id": "case-10f6ad52d3a6",
    "status": "awaiting_review",
    "resolved_name": "Siemens Aktiengesellschaft",
    "risk_band": "LOW",
@@ -157,7 +158,7 @@
     "screening": "ok"
    },
    "errors": [
-    "gdelt: retries exhausted (429) for https://api.gdeltproject.org/api/v2/doc/doc?format=json&maxrecords=75&mode=artlist&query=%22Siemens+Aktiengesellschaft%22+sourcelang%3Aenglish&sort=datedesc&timespan=3months"
+    "gdelt: retries exhausted (429) for https://api.gdeltproject.org/api/v2/doc/doc?format=json&maxrecords=75&mode=artlist&query=%22siemens+aktiengesellschaft%22+sourcelang%3Aenglish&sort=datedesc&timespan=1week"
    ],
    "peer": {
     "available": false,
@@ -168,7 +169,7 @@
    "seconds": null
   },
   "Microsoft Corp": {
-   "case_id": "case-b055c2821878",
+   "case_id": "case-58e10342ea71",
    "status": "awaiting_review",
    "resolved_name": "MICROSOFT CORP",
    "risk_band": "LOW",
@@ -186,16 +187,14 @@
    ],
    "coverage": {
     "resolution": "ok",
-    "adverse_media": "partial",
+    "adverse_media": "ok",
     "corporate_registry": "ok",
     "insiders": "ok",
     "filings_text": "ok",
     "financials": "ok",
     "screening": "ok"
    },
-   "errors": [
-    "gdelt: retries exhausted (429) for https://api.gdeltproject.org/api/v2/doc/doc?format=json&maxrecords=75&mode=artlist&query=%22MICROSOFT+CORP%22+sourcelang%3Aenglish&sort=datedesc&timespan=3months"
-   ],
+   "errors": [],
    "peer": {
     "available": true,
     "anomaly": false,
@@ -273,7 +272,7 @@
  "double_decision_blocked": 409,
  "audit_verify": {
   "intact": true,
-  "records": 34,
+  "records": 40,
   "first_bad_seq": null,
   "head_matches": true
  },
@@ -303,13 +302,13 @@
    {
     "provider": "extractive",
     "calls": 35,
-    "input_tokens": 27737,
+    "input_tokens": 27735,
     "output_tokens": 4852,
     "cost_usd": 0
    }
   ],
   "peer_model": "peer_anomaly:v1",
   "runner_mode": "background",
-  "audit_records": 35
+  "audit_records": 41
  }
 }

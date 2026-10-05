@@ -145,6 +145,8 @@ def test_sources_governance_screening_users(client):
     assert src["ofac_sdn"]["current_records"] > 0 and src["opensanctions_peps"]["enabled"] is False
     gov = client.get("/api/v1/governance", headers=a).json()
     assert gov["policy_version"] == "tprm-policy-2026.10" and len(gov["agents"]) >= 15
+    assert gov["scorecard_version"] == "scorecard-2026.10" and gov["screening_method"] == "screening:rapidfuzz-v2"
+    assert gov["media_taxonomy"].startswith("media-taxonomy-") and gov["prompt_version"]
     hits = client.post("/api/v1/screening", json={"name": "Bank Melli Iran", "entity_type": "entity"}, headers=a).json()
     assert hits["hits"] and hits["hits"][0]["source_id"] in ("ofac_sdn", "uk_sanctions", "eu_fsf", "un_sc")
     runs = client.get("/api/v1/sources/runs", headers=au).json()
@@ -182,3 +184,26 @@ def test_spa_serving(container, tmp_path):
         assert "sentinel" in c.get("/cases/abc").text and c.get("/assets/app.js").status_code == 200
         assert c.get("/api/v1/nope").status_code == 404
         assert c.get("/../../etc/passwd").status_code in (200, 404) and "root:" not in c.get("/../../etc/passwd").text
+
+
+def test_settings_apply_when_app_is_built_from_the_environment(workdir, monkeypatch):
+    """`uvicorn sentinel.api.main:create_app --factory` passes no container: limits must come from the environment."""
+    from sentinel.config import get_settings
+
+    monkeypatch.setenv("SENTINEL_DATA_DIR", str(workdir))
+    monkeypatch.setenv("SENTINEL_DATABASE_URL", f"sqlite:///{workdir}/sentinel.db")
+    monkeypatch.setenv("SENTINEL_CHECKPOINT_URL", f"{workdir}/checkpoints.sqlite")
+    monkeypatch.setenv("SENTINEL_RATE_LIMIT_PER_MINUTE", "2")
+    monkeypatch.setenv("SENTINEL_CORS_ORIGINS", '["https://ui.example.org"]')
+    get_settings.cache_clear()
+    try:
+        with TestClient(create_app()) as c:
+            codes = [c.get("/api/v1/sources").status_code for _ in range(4)]
+            assert codes[:2] == [401, 401] and 429 in codes[2:]
+            pre = c.options(
+                "/api/v1/cases",
+                headers={"Origin": "https://ui.example.org", "Access-Control-Request-Method": "POST"},
+            )
+            assert pre.headers.get("access-control-allow-origin") == "https://ui.example.org"
+    finally:
+        get_settings.cache_clear()

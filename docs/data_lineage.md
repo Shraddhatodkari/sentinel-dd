@@ -19,20 +19,21 @@ flowchart LR
 ```
 
 * Every evidence item has a `document_id`; `GET /api/v1/documents/{id}` returns URL, retrieval time, hash, size and
-  whether the raw bytes are present and match (`integrity_verified`). The dashboard's **Lineage & integrity**
+  whether the raw bytes are present and re-hash to the recorded SHA-256 (`integrity_verified`). The dashboard's **Lineage & integrity**
   button on each evidence item calls it.
 * Signals, scorecard factors and policy rules list the evidence ids they rely on; the dashboard renders them as
   citation chips with the evidence title and URL.
 * Report and research answers cite `[evidence-prefix#chunk]`; the grounding check verifies that each cited chunk
   exists in the case and supports the sentence.
-* Assessments store the scorecard version, the feature vector and model versions (`peer_model`, `media_taxonomy`,
-  `screening`), so the score can be recomputed from persisted data.
+* Assessments store the scorecard version, the feature vector and `model_versions` (`scorecard`, `peer_model`,
+  `media_taxonomy`, `screening`, `jurisdiction_policy`, `prompt`, `llm`), so the score can be recomputed from
+  persisted data.
 
 ## Data-quality controls
 
 | Stage | Control |
 |---|---|
-| HTTP | status-code handling (404 = authoritative absence, not retried; 408/425/429/5xx retried), timeouts, breaker |
+| HTTP | status-code handling (404 = authoritative absence, not retried; 408, 425, 429, 500, 502, 503, 504 retried with backoff and `Retry-After`; other errors fail fast), timeouts, breaker |
 | Reference lists | parser per official format; records without a usable name rejected and counted; duplicates removed; shrink gate (> 20 % drop refuses the new version and keeps the current one); unchanged content detected by version key (no new version); last 3 versions kept |
 | Freshness | per-source SLA; `stale` computed from the last successful retrieval; stale sanctions lists force REVIEW (TPRM-DAT-03) and are listed per case |
 | Entity resolution | EDGAR/GLEIF corroboration, confidence, ambiguity flag; low confidence → TPRM-DAT-02 |

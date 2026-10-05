@@ -17,8 +17,8 @@
 | `source_requests_total{outcome="exhausted"\|"circuit_open"}` by host | sustained for 30 min → upstream outage; cases will show degraded coverage |
 | `source_retries_total` by host | spike → upstream throttling (GDELT/SEC); check fair-access limits and User-Agent |
 | `cases_failed_total` | any increase → inspect `case_events` errors, retry |
-| `agent_node_seconds` | p95 per node regression |
-| `llm_errors_total`, `llm_fallbacks_total` | fallback ratio > 5 % for 10 min → provider incident |
+| `agent_node_seconds` (mean = sum / count, per node) | mean per node regresses vs. last week |
+| `llm_errors_total`, `llm_fallbacks_total` (per provider, counted when a provider call fails after its retries and the next provider is tried) | fallback ratio > 5 % for 10 min → provider incident |
 | `llm_cost_usd_total` | budget threshold per day |
 | `guardrail_blocks_total`, `indirect_injection_blocked_total` | sudden spike → possible abuse; review audit |
 | `rag_grounding_score` (mean = sum / count) | < 0.8 for 1 h → retrieval/LLM regression |

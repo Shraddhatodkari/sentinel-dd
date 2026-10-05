@@ -10,7 +10,7 @@ table records what was inspected, what was wrong for an enterprise system, and w
 | Persistence | In-memory stores, JSON files, file audit log | State lost on restart; no transactions | SQLAlchemy + Alembic (PostgreSQL/SQLite), constraints, indexes, append-only audit table with triggers |
 | Layers | Facts, model output and decisions mixed in one result | Not auditable | Separate tables for source facts, signals, assessments, policy decisions, human decisions |
 | Entity resolution | Lookup in a fictional registry | — | EDGAR + GLEIF resolution with confidence and ambiguity |
-| Screening | Fuzzy match vs. 20 invented entries | No real recall/FPR | Five official lists (33 649 records on 2026-10-04), aliases, identifiers, IDF-weighted matching; measured on full lists |
+| Screening | Fuzzy match vs. 20 invented entries | No real recall/FPR | Five official lists (33 649 records on 2026-10-05), aliases, identifiers, IDF-weighted matching; measured on full lists |
 | Ownership/UBO | Pattern/LLM extraction from fictional text | Unverifiable on real data | Evidence-backed GLEIF/Exhibit 21/Form 3/4 graph; explicit "not a UBO register" limitation |
 | Risk model | GBM trained on synthetic labels | Arbitrary probabilities | Versioned scorecard with evidence per factor; IsolationForest peer model on real SEC data ([ADR-0007](adr/0007-scorecard-instead-of-ml-classifier.md)) |
 | LLM | Fake LLM in tests; generation could add facts | Hallucination risk | Extractive default (no generation); grounding enforced; usage/cost metered |

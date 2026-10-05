@@ -11,8 +11,8 @@ its behaviour on real entities, and fictional evidence must never appear in a re
   GDELT). Sources whose licence restricts commercial use are present as disabled adapters.
 * Every response is stored content-addressed with lineage metadata; evidence references it.
 * Offline tests replay recorded real responses through an httpx transport. Large lists are represented by documented
-  excerpts (unmodified rows, selection rule and full-file hash recorded). Unrecorded requests return 503 (treated as
-  an outage), never synthetic content.
+  excerpts (unmodified rows, selection rule and full-file hash recorded). In the offline suite (`strict=False`) unrecorded requests return
+  503 (treated as an outage), never synthetic content; strict mode raises.
 * Full-list metrics are produced from live runs and stored under `docs/evidence/`.
 
 ## Consequences

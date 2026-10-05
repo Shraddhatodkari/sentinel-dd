@@ -1,8 +1,8 @@
 """Model Context Protocol (MCP) server exposing Sentinel tools to MCP clients (Claude Desktop, Claude Code, IDEs).
 
 Security model: the server runs *as a principal*. Set ``SENTINEL_MCP_TOKEN`` to a JWT issued to a service account
-(``sentinel users token <username>``); every tool call is authorised against that principal's permissions and
-audited. There is deliberately no tool that approves or rejects a case.
+(``sentinel users token --username <service-user>``); every tool call is authorised against that principal's
+permissions and audited. There is deliberately no tool that approves or rejects a case.
 
 Run:  ``sentinel-mcp`` (stdio)  or  ``sentinel-mcp --transport streamable-http``
 """
@@ -22,6 +22,7 @@ from sentinel.agents.service import CaseNotFound, CaseService, GuardrailViolatio
 from sentinel.agents.tools import ToolDenied, build_tools
 from sentinel.container import Container
 from sentinel.ingestion.reference import freshness
+from sentinel.risk.scorecard import SCORECARD_VERSION
 from sentinel.security.auth import Principal
 
 INSTRUCTIONS = (
@@ -85,7 +86,7 @@ def create_server(container: Container, service: CaseService, principal: Princip
         return json.dumps(
             {
                 "policy_version": s.policy_version,
-                "scorecard_version": s.scorecard_version,
+                "scorecard_version": SCORECARD_VERSION,
                 "auto_clear_enabled": s.auto_clear_enabled,
                 "screening_threshold": s.screening_review_threshold,
                 "grounding_threshold": s.grounding_threshold,

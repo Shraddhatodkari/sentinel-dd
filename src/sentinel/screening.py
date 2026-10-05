@@ -26,6 +26,8 @@ from sentinel.db.base import Database
 from sentinel.db.models import IngestionRun, SourceDocument, WatchlistEntry, WatchlistName
 from sentinel.timeutil import iso
 
+SCREENING_VERSION = "screening:rapidfuzz-v2"  # v2: IDF-weighted organisation matching, distinctive-token check
+
 _LEGAL = re.compile(
     r"\b(public joint stock company|joint stock company|limited liability company|private limited company|"
     r"pjsc|ojsc|cjsc|jsc|pao|oao|zao|ooo|llc|l l c|ltd|limited|inc|incorporated|corp|corporation|co|company|"

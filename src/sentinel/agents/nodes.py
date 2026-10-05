@@ -31,11 +31,13 @@ from sentinel.llm.base import Message, StructuredOutputError
 from sentinel.llm.metering import llm_context
 from sentinel.observability.logging import get_logger, log_event
 from sentinel.observability.metrics import METRICS
-from sentinel.prompts import CRITIC_SYSTEM, GROUNDED_QA_SYSTEM, PLANNER_SYSTEM, REPORT_SYSTEM
+from sentinel.prompts import CRITIC_SYSTEM, GROUNDED_QA_SYSTEM, PLANNER_SYSTEM, PROMPT_VERSION, REPORT_SYSTEM
 from sentinel.rag.qa import GroundedQA
 from sentinel.risk import scorecard
 from sentinel.risk.financial import FinancialIndicators
-from sentinel.risk.jurisdictions import tier_for
+from sentinel.risk.jurisdictions import load_policy, tier_for
+from sentinel.risk.media import TAXONOMY_VERSION
+from sentinel.screening import SCREENING_VERSION
 from sentinel.sources.catalog import SANCTIONS_SOURCES
 from sentinel.sources.http import SourceError
 from sentinel.timeutil import iso, utcnow
@@ -472,8 +474,11 @@ class Agents:
             row.model_versions = {
                 "scorecard": a.version,
                 "peer_model": self.c.peer_model_version,
-                "media_taxonomy": "media-taxonomy-2026.10",
-                "screening": "screening:rapidfuzz-v1",
+                "media_taxonomy": TAXONOMY_VERSION,
+                "screening": SCREENING_VERSION,
+                "jurisdiction_policy": load_policy()["version"],
+                "prompt": PROMPT_VERSION,
+                "llm": f"{self.c.llm.provider}:{self.c.llm.model}",
             }
             if existing is None:
                 s.add(row)

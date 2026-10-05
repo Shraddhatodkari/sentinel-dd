@@ -15,7 +15,7 @@ sends the case to review.
 | `sec_edgar` | EDGAR company index, submissions, XBRL company facts & frames, 10-K, Exhibit 21, Forms 3/4 | US SEC | HTTPS API/archives | US Government work; [fair-access policy](https://www.sec.gov/os/accessing-edgar-data) (≤ 10 req/s, declared User-Agent) | per case (cache 6 h) | resolution, filings text, subsidiaries, insiders, financials, peer model |
 | `gleif` | LEI records, Level 2 parents/children | GLEIF | REST API | CC0 1.0 | per case | resolution, ownership (consolidation) |
 | `doj_press` | Press releases API | US Department of Justice | REST API | US Government work | per case | enforcement history |
-| `gdelt` | DOC 2.0 article list | The GDELT Project | REST API | open with attribution; article text belongs to publishers — only metadata (title, URL, domain, date) is stored | per case | news mentions |
+| `gdelt` | DOC 2.0 article list | The GDELT Project | REST API | open with attribution; article text belongs to publishers — only metadata (title, URL, domain, date) is stored | per case (window `SENTINEL_GDELT_TIMESPAN`) | news mentions |
 
 ## What each record carries
 
@@ -34,7 +34,10 @@ list entry id), confidence and the case. See [data_lineage.md](data_lineage.md).
   coverage but no filings/financials (`not_applicable`).
 * **PEP coverage** by default is US Congress only. Global PEP screening needs a licensed dataset (adapter present,
   disabled).
-* **GDELT** enforces roughly one request per 5 seconds per client and frequently returns HTTP 429 or times out from
+* **GDELT** is queried with the entity's distinctive short name (as DOJ is): exact legal-form phrases such as
+  `"BOEING CO"` returned no results in testing, and 3-month windows returned an empty `{}` where a 1-week window
+  returned articles, so the default window is `SENTINEL_GDELT_TIMESPAN=1week`. GDELT answers "no results" and some
+  internal errors with the same `{}`, so an empty GDELT result is not proof of absence. GDELT enforces roughly one request per 5 seconds per client and frequently returns HTTP 429 or times out from
   shared egress IPs. During the release runs it was unavailable for most cases; those cases show adverse-media
   coverage `partial` with the error, and the DOJ source still contributed. Plan a commercial news provider for
   production adverse-media coverage.
@@ -54,6 +57,10 @@ Tests and the offline evaluation replay **recorded real responses** (`tests/fixt
 documented rule (named entities used in tests plus a seeded random sample), each cassette marked `excerpt: true` with
 the full file's SHA-256. Excerpts are never presented as complete lists; full-list metrics come from live runs
 (see [evaluation.md](evaluation.md)).
+
+GDELT could not be recorded through the recorder (throttled); one successful real `artlist` response (query
+`boeing`, 1 week) was captured with curl on 2026-10-05 and is stored as a cassette marked `recorded_with: curl`. In
+replayed investigations GDELT has no recording and is therefore reported as unavailable, exactly as in the live runs.
 
 The fictional companies of v1 (Helios, Northwind, BlueOrbit) and their documents have been removed from the
 repository.

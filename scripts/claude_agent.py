@@ -41,7 +41,10 @@ def main() -> int:
     agent = ClaudeToolAgent(
         anthropic.Anthropic(api_key=key), c.settings.anthropic_model, build_tools(CaseService(c)), c.guardrails, c.audit
     )
-    run = agent.run(args.prompt, principal)
+    try:
+        run = agent.run(args.prompt, principal)
+    finally:
+        c.close()
     print(run.answer)
     print(json.dumps({"tool_calls": run.tool_calls, "stopped": run.stopped_reason}, indent=2, default=str))
     return 0

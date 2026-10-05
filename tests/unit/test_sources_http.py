@@ -4,7 +4,6 @@ from datetime import UTC, datetime
 import httpx
 import pytest
 
-from sentinel.db.base import Database
 from sentinel.reliability import CircuitBreaker, MinIntervalLimiter
 from sentinel.sources.fetcher import SourceFetcher
 from sentinel.sources.http import ResilientHttpClient, SourceNotFound, SourceUnavailable
@@ -78,14 +77,17 @@ def test_raw_store_is_content_addressed_and_verified(tmp_path):
     rs = RawStore(tmp_path)
     sha, path = rs.put(b"hello")
     assert rs.put(b"hello") == (sha, path) and rs.get(sha) == b"hello" and rs.exists(sha)
+    assert rs.verify(sha)
     (tmp_path / path).write_bytes(gzip.compress(b"tampered"))
     with pytest.raises(ValueError, match="integrity"):
         rs.get(sha)
+    assert rs.exists(sha) and not rs.verify(sha)  # present but not matching → not verified
+    (tmp_path / path).unlink()
+    assert not rs.verify(sha)
 
 
-def test_fetcher_lineage_cache_and_idempotency(tmp_path):
-    db = Database(f"sqlite:///{tmp_path}/f.db")
-    db.upgrade()
+def test_fetcher_lineage_cache_and_idempotency(tmp_path, make_db):
+    db = make_db("f.db")
     from sentinel.ingestion.reference import sync_source_catalog
 
     sync_source_catalog(db)

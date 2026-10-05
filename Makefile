@@ -11,7 +11,7 @@ lint:
 format:
 	ruff check src tests scripts --fix && ruff format src tests scripts
 type:
-	mypy src && cd dashboard && npx tsc -b --noEmit
+	mypy src scripts && python scripts/gen_config_docs.py --check && cd dashboard && npx tsc -b --noEmit
 test:
 	pytest
 cov:
@@ -21,7 +21,7 @@ e2e:          ## browser e2e only (needs `make ui` and `python -m playwright ins
 eval:
 	sentinel eval
 security:
-	bandit -r src -ll -q && pip-audit --progress-spinner off --skip-editable && cd dashboard && npm audit --omit=dev --audit-level=high
+	bandit -r src scripts -ll -q && pip-audit --progress-spinner off --skip-editable && cd dashboard && npm audit --omit=dev --audit-level=high
 db:
 	sentinel db upgrade
 sources:      ## download the official watch lists (live)

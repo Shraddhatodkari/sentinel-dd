@@ -7,6 +7,7 @@ sentinel users token --username mcp-svc --ttl-minutes 60
 sentinel sources refresh --all | --source ofac_sdn
 sentinel sources status
 sentinel ml train --year 2024
+sentinel ml sft-export --as carol --out var/sft   (DLP-masked memo dataset from human-approved cases)
 sentinel ml drift --year 2025   (PSI of a newer SEC XBRL frame vs. the model reference; exit 2 = retrain)
 sentinel investigate "Apple Inc." --as alice
 sentinel audit verify
@@ -32,6 +33,18 @@ def _container() -> Any:
     return Container.build()
 
 
+_OPEN: list[Any] = []
+
+
+def _tracked(factory: Any) -> Any:
+    def build() -> Any:
+        c = factory()
+        _OPEN.append(c)
+        return c
+
+    return build
+
+
 def _print(obj: Any) -> None:
     print(json.dumps(obj, indent=2, default=str))
 
@@ -41,9 +54,12 @@ def cmd_db(args: argparse.Namespace) -> int:
     from sentinel.db.migrate import current_revision, head_revision
 
     db = Database(get_settings().database_url)
-    if args.action == "upgrade":
-        db.upgrade()
-    _print({"current": current_revision(db.engine), "head": head_revision(db.engine)})
+    try:
+        if args.action == "upgrade":
+            db.upgrade()
+        _print({"current": current_revision(db.engine), "head": head_revision(db.engine)})
+    finally:
+        db.engine.dispose()
     return 0
 
 
@@ -92,6 +108,18 @@ def cmd_sources(args: argparse.Namespace) -> int:
 
 def cmd_ml(args: argparse.Namespace) -> int:
     c = _container()
+    if args.action == "sft-export":
+        from sentinel.agents.service import CaseService
+        from sentinel.finetune.dataset import approved_cases, build_records, split_and_write
+        from sentinel.security.users import UserService
+
+        p = UserService(c.db).get_principal(args.as_user or "")
+        if p is None:
+            print("error: --as must name an existing user (an auditor sees all approved cases)", file=sys.stderr)
+            return 2
+        records = build_records(approved_cases(CaseService(c), p), c.dlp)
+        _print({"records": len(records), "splits": split_and_write(records, args.out) if records else {}})
+        return 0
     if args.action == "drift":
         from sentinel.ml.drift import drift_report
         from sentinel.risk.peer_model import FEATURES, MODEL_NAME, build_dataset
@@ -208,8 +236,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--all", action="store_true")
     p.set_defaults(fn=cmd_sources)
     p = sub.add_parser("ml")
-    p.add_argument("action", choices=["train", "drift"])
+    p.add_argument("action", choices=["train", "drift", "sft-export"])
     p.add_argument("--year", type=int, default=2024)
+    p.add_argument("--out", default="var/sft", help="sft-export: output directory for train/val JSONL")
+    p.add_argument("--as", dest="as_user", help="sft-export: user whose visibility applies")
     p.set_defaults(fn=cmd_ml)
     p = sub.add_parser("investigate")
     p.add_argument("query")
@@ -226,7 +256,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed", type=int, default=7)
     p.set_defaults(fn=cmd_eval)
     args = ap.parse_args(argv)
-    return int(_guarded(args.fn)(args))
+    global _container
+    base = _container
+    _container = _tracked(base)  # every container built by the command is closed afterwards
+    try:
+        return int(_guarded(args.fn)(args))
+    finally:
+        _container = base
+        while _OPEN:
+            _OPEN.pop().close()
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -13,8 +13,10 @@ documentation, not a disclaimer to be skipped.
 3. **PEP coverage is narrow by default** (US Congress). Global PEP data requires a licensed source; the OpenSanctions
    adapter is present but disabled because its data licence is non-commercial.
 4. **Adverse media is thin.** DOJ press releases (US federal enforcement) work reliably; GDELT is frequently throttled
-   or unreachable from shared IPs and was unavailable for most cases in the release runs. A commercial news/risk data
-   provider is needed for production-grade adverse-media coverage. Only English sources are classified.
+   or unreachable from shared IPs and was unavailable for most cases in the release runs. An empty GDELT result (`{}`) is
+   indistinguishable from some GDELT-side failures, and the default window is one week (see
+   [data_sources.md](data_sources.md)). A commercial news/risk data provider is needed for production-grade
+   adverse-media coverage. Only English sources are classified.
 5. **SEC-centric financials.** Filings text, insiders and XBRL financials exist only for SEC registrants.
 6. **Screening method.** Name-based fuzzy matching with alias and identifier support. It does not generate
    transliteration variants, and does not use date of birth, nationality or addresses to discount person matches. The

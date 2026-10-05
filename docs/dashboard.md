@@ -6,7 +6,7 @@ live data from the database; there are no sample figures. The page is CSP-compat
 scripts) and renders source text with React escaping and a custom Markdown renderer (no raw HTML injection).
 
 Screenshots below come from the browser end-to-end test (recorded real data) and from the live PostgreSQL run of
-2026-10-04.
+2026-10-05.
 
 ## Pages
 
@@ -17,8 +17,8 @@ Screenshots below come from the browser end-to-end test (recorded real data) and
 | **New investigation** | analyst | legal name, optional CIK/LEI/ticker and research question; idempotency key per form; redirects to the live case page |
 | **Case explorer** | all (scoped) | search/filter by status and band, paging, auto-refresh while cases run |
 | **Case workspace** | all (scoped) | live progress while running; tabs below |
-| **Review queue** | reviewer, senior reviewer, auditor | pending/approved/rejected; eligibility per item (maker-checker, tier) |
-| **Audit trail** | auditor | hash-chained records with paging and resource filter; **Verify chain integrity** |
+| **Review queue** | reviewer, senior reviewer, auditor, admin (read-only unless the role can decide) | pending/approved/rejected; eligibility per item (maker-checker, tier) |
+| **Audit trail** | auditor, admin | hash-chained records with paging and resource filter; **Verify chain integrity** |
 | **Data sources** | all | source registry with authority, licence, SLA, freshness, last run; ingestion runs with data-quality details; refresh button (admin) |
 | **Governance** | all | policy/scorecard/peer-model/LLM versions, thresholds, jurisdiction policy, agent contracts, source catalogue |
 

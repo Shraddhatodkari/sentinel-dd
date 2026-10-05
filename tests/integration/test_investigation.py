@@ -36,6 +36,9 @@ def test_apple_full_investigation_layers_and_lineage(service, principal, contain
     a = d["assessment"]
     assert a["band"] == "LOW" and a["scorecard_version"] == "scorecard-2026.10" and len(a["factors"]) == 8
     assert a["model_versions"]["peer_model"] == "peer_anomaly:v1"
+    assert a["model_versions"]["screening"] == "screening:rapidfuzz-v2"
+    assert a["model_versions"]["jurisdiction_policy"].startswith("jurisdiction-policy-")
+    assert a["model_versions"]["prompt"] and a["model_versions"]["llm"] == "extractive:extractive-v1"
     adverse = [s for s in d["signals"] if s["signal_type"] == "adverse_media"]
     assert adverse and all(s["detail"]["subject_role"] == "subject" for s in adverse)
     victim_titles = [e["title"] for e in d["evidence"] if e["structured"].get("subject_role") == "victim"]

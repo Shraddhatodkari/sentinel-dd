@@ -14,12 +14,14 @@ Additional variables outside `Settings`:
 | `SENTINEL_DASHBOARD_DIR` | API | directory of the built dashboard (default `dashboard/dist` in a checkout; `/app/dashboard` in the image) |
 | `SENTINEL_JURISDICTION_POLICY_PATH` | risk / policy | JSON file overriding the default jurisdiction tiers (see `risk/jurisdictions.py`) |
 | `SENTINEL_NEW_PASSWORD` | CLI `users create` | avoids an interactive prompt |
-| `SENTINEL_MIGRATE_ON_START` | entrypoint + app | `false` when migrations run as a separate job |
+| `SENTINEL_MCP_TOKEN` | `sentinel-mcp` | JWT of the service account the MCP server acts as (`sentinel users token`) |
+| `MLFLOW_TRACKING_URI` | `finetune/hf_lora_train.py` | optional; enables MLflow reporting in the research fine-tuning script (falls back to `SENTINEL_MLFLOW_TRACKING_URI`) |
 | `SENTINEL_WEB_WORKERS`, `PORT` | container entrypoint | uvicorn worker processes and port |
 | `POSTGRES_PASSWORD` | docker-compose | database password for the compose stack |
 
 ## Reference
 
+<!-- settings:begin -->
 | Variable | Default | Notes |
 |---|---|---|
 | `SENTINEL_ENV` | `dev` | `prod` enables start-up validation (strong JWT secret, PostgreSQL, real SEC contact) |
@@ -44,6 +46,7 @@ Additional variables outside `Settings`:
 | `SENTINEL_LLM_TIMEOUT_S` | `60.0` |  |
 | `SENTINEL_LLM_MAX_RETRIES` | `3` |  |
 | `SENTINEL_LLM_PRICE_PER_MTOK` | `{'claude-sonnet-4-5': (3.0, 15.0), 'gpt-4o-mini': (0.15, 0.6)}` | USD per 1M tokens (input, output) for cost metrics |
+| `SENTINEL_MLFLOW_TRACKING_URI` | `—` | optional: mirror model-registry metrics/params to MLflow |
 | `SENTINEL_SEC_USER_AGENT` | `Sentinel-DD compliance-research admin@example.com` | SEC requires a contact UA |
 | `SENTINEL_HTTP_TIMEOUT_S` | `30.0` |  |
 | `SENTINEL_HTTP_MAX_RETRIES` | `3` |  |
@@ -53,6 +56,7 @@ Additional variables outside `Settings`:
 | `SENTINEL_SANCTIONS_MAX_AGE_H` | `36` | sanctions-list freshness SLA (h); stale lists force review (TPRM-DAT-03) |
 | `SENTINEL_PEP_MAX_AGE_H` | `336` | PEP-list freshness SLA (h) |
 | `SENTINEL_ENABLE_GDELT` | `True` |  |
+| `SENTINEL_GDELT_TIMESPAN` | `1week` | GDELT DOC API window; in testing 3-month windows returned `{}` while 1 week returned articles |
 | `SENTINEL_ENABLE_OPENSANCTIONS_PEPS` | `False` | OpenSanctions is CC BY-NC: enable only with a commercial licence |
 | `SENTINEL_EMBEDDING_BACKEND` | `hashing` | `hashing` (offline), `sentence_transformers` (extra `embeddings`), `openai` |
 | `SENTINEL_EMBEDDING_DIM` | `384` |  |
@@ -72,14 +76,17 @@ Additional variables outside `Settings`:
 | `SENTINEL_LOCAL_AUTH_ENABLED` | `True` | username/password login against the users table (disable behind an IdP) |
 | `SENTINEL_PASSWORD_MIN_LENGTH` | `12` | user password policy |
 | `SENTINEL_POLICY_VERSION` | `tprm-policy-2026.10` | recorded on every policy decision |
-| `SENTINEL_SCORECARD_VERSION` | `scorecard-2026.10` | recorded on every assessment |
 | `SENTINEL_AUTO_CLEAR_ENABLED` | `False` | conservative default: every case gets a human decision |
 | `SENTINEL_MAX_AGENT_STEPS` | `40` | LangGraph recursion limit per case |
 | `SENTINEL_RUNNER_MODE` | `background` | `background` thread pool or `inline` (CLI/tests) |
 | `SENTINEL_RUNNER_WORKERS` | `2` | background worker threads per process |
+<!-- settings:end -->
 
 ## Notes
 
+* **Versions.** `POLICY_VERSION` labels the policy configuration (thresholds, auto-clear). The scorecard, media
+  taxonomy, screening method and prompt versions are constants in code, because changing them requires a code change;
+  all of them are recorded with every assessment (`model_versions`) and shown in `GET /api/v1/governance`.
 * **Thresholds are configuration, not code.** Changing `SCREENING_REVIEW_THRESHOLD`, `GROUNDING_THRESHOLD` or
   `AUTO_CLEAR_ENABLED` changes outcomes; treat such changes as policy changes (approval, version bump of
   `POLICY_VERSION`, re-run `sentinel eval`).

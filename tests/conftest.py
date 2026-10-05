@@ -41,8 +41,7 @@ def seeded_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
     for u, roles in USERS.items():
         us.create(u, PASSWORD, roles, display_name=u.title())
     us.create("eve", PASSWORD, ["analyst"], tenant="other-bank", display_name="Eve")
-    c.checkpointer.conn.close()
-    c.db.engine.dispose()
+    c.close()
     return d
 
 
@@ -57,7 +56,7 @@ def workdir(seeded_dir: Path, tmp_path: Path) -> Path:
 def container(workdir: Path):
     c = offline_container(workdir, FIXTURES)
     yield c
-    c.db.engine.dispose()
+    c.close()
 
 
 @pytest.fixture
@@ -87,3 +86,21 @@ def principal(container):
 def _reset_metrics():
     METRICS.reset()
     yield
+
+
+@pytest.fixture
+def make_db(tmp_path):
+    """Migrated standalone SQLite database(s); engines are disposed after the test."""
+    from sentinel.db.base import Database
+
+    made = []
+
+    def make(name: str = "t.db") -> Database:
+        db = Database(f"sqlite:///{tmp_path}/{name}")
+        db.upgrade()
+        made.append(db)
+        return db
+
+    yield make
+    for db in made:
+        db.engine.dispose()

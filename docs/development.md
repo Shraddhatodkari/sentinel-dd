@@ -17,7 +17,7 @@ pre-commit install
 | Command | What |
 |---|---|
 | `make lint` / `make format` | ruff check / format (src, tests, scripts) |
-| `make type` | mypy (settings in `pyproject.toml`) + `tsc` for the dashboard |
+| `make type` | mypy (src + scripts), configuration-docs drift check, `tsc` for the dashboard |
 | `make test` / `make cov` | pytest (offline) / with coverage (gate 80 %) |
 | `make e2e` | browser test of the dashboard |
 | `make eval` | offline evaluation gates |
@@ -36,9 +36,9 @@ pre-commit install
 
 ### Recording fixtures
 
-All HTTP in offline tests goes through `ReplayTransport`. A request without a recording is answered with HTTP 503,
-which the system treats like an upstream outage (degraded coverage) — never with made-up content; `strict=True`
-raises instead. To add a scenario:
+All HTTP in offline tests goes through `ReplayTransport`. The offline suite and `sentinel eval` use it with
+`strict=False`: a request without a recording is answered with HTTP 503, which the system treats like an upstream
+outage (degraded coverage) — never with made-up content. With the default `strict=True` it raises instead. To add a scenario:
 
 ```bash
 python scripts/record_fixtures.py --out tests/fixtures/http "Example Corp"     # records real responses (network)

@@ -19,13 +19,18 @@ from sentinel import __version__
 from sentinel.agents.service import CaseNotFound, CaseService, GuardrailViolation, ReviewError
 from sentinel.api.schemas import CaseCreate, CaseList, Decision, LoginRequest, ScreenRequest, TokenResponse, UserCreate
 from sentinel.api.security import SecurityMiddleware, TokenBucketLimiter, current_principal, require
+from sentinel.config import get_settings
 from sentinel.container import Container
 from sentinel.db.migrate import current_revision, head_revision
 from sentinel.db.models import IngestionRun, LLMUsage, SourceDocument
 from sentinel.ingestion.reference import freshness
 from sentinel.observability.logging import configure_logging, request_id_ctx
 from sentinel.observability.metrics import METRICS
+from sentinel.prompts import PROMPT_VERSION
 from sentinel.risk.jurisdictions import load_policy
+from sentinel.risk.media import TAXONOMY_VERSION
+from sentinel.risk.scorecard import SCORECARD_VERSION
+from sentinel.screening import SCREENING_VERSION
 from sentinel.security.auth import Permission, Principal
 from sentinel.security.users import UserError, UserService
 from sentinel.sources.catalog import SOURCES
@@ -46,13 +51,16 @@ def create_app(
 ) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        if not hasattr(app.state, "container"):
+        owned = not hasattr(app.state, "container")
+        if owned:
             c = Container.build()
             configure_logging(c.settings.log_level)
             _attach(app, c, None)
         app.state.service.recover()
         yield
         app.state.service.shutdown()
+        if owned:  # the app built the container, so it closes it; injected containers belong to the caller
+            app.state.container.close()
 
     app = FastAPI(
         title="Sentinel — Due-Diligence & Third-Party Risk Intelligence API",
@@ -64,18 +72,19 @@ def create_app(
     )
     if container is not None:
         _attach(app, container, service)
-    rate = container.settings.rate_limit_per_minute if container else 120
-    app.add_middleware(SecurityMiddleware, limiter=TokenBucketLimiter(rate))
-    if container is not None and container.settings.cors_origins:
+    # Settings come from the injected container (tests) or the environment (uvicorn --factory / container image).
+    cfg = container.settings if container is not None else get_settings()
+    app.add_middleware(SecurityMiddleware, limiter=TokenBucketLimiter(cfg.rate_limit_per_minute))
+    if cfg.cors_origins:
         from fastapi.middleware.cors import CORSMiddleware
 
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=container.settings.cors_origins,
+            allow_origins=cfg.cors_origins,
             allow_methods=["GET", "POST"],
             allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Request-ID"],
         )
-    login_limiter = TokenBucketLimiter(container.settings.login_rate_limit_per_minute if container else 10)
+    login_limiter = TokenBucketLimiter(cfg.login_rate_limit_per_minute)
 
     @app.exception_handler(RequestValidationError)
     async def validation_handler(_r: Request, exc: RequestValidationError) -> JSONResponse:
@@ -374,7 +383,7 @@ def create_app(
                 "content_type": d.content_type,
                 "size_bytes": d.size_bytes,
                 "http_status": d.http_status,
-                "integrity_verified": c.fetcher.raw.exists(d.sha256),
+                "integrity_verified": c.fetcher.raw.verify(d.sha256),
             }
 
     # ------------------------------------------------------------------ audit & governance
@@ -410,7 +419,10 @@ def create_app(
     ) -> dict[str, Any]:
         return {
             "policy_version": c.settings.policy_version,
-            "scorecard_version": c.settings.scorecard_version,
+            "scorecard_version": SCORECARD_VERSION,
+            "prompt_version": PROMPT_VERSION,
+            "media_taxonomy": TAXONOMY_VERSION,
+            "screening_method": SCREENING_VERSION,
             "auto_clear_enabled": c.settings.auto_clear_enabled,
             "screening_threshold": c.settings.screening_review_threshold,
             "grounding_threshold": c.settings.grounding_threshold,

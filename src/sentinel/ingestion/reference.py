@@ -73,8 +73,16 @@ def sync_source_catalog(
 
 
 class ReferenceDataService:
-    def __init__(self, db: Database, fetcher: SourceFetcher, max_shrink: float = 0.2, keep_versions: int = 3) -> None:
+    def __init__(
+        self,
+        db: Database,
+        fetcher: SourceFetcher,
+        max_shrink: float = 0.2,
+        keep_versions: int = 3,
+        audit: Any = None,
+    ) -> None:
         self.db = db
+        self.audit = audit  # AuditLog: every completed or failed refresh is recorded (CLI, CronJob or API)
         self.fetcher = fetcher
         self.max_shrink = max_shrink
         self.keep_versions = keep_versions
@@ -150,6 +158,9 @@ class ReferenceDataService:
                 )
             METRICS.inc("reference_refresh", source=source_id, outcome="unchanged" if unchanged else "loaded")
             log_event(log, "reference_refresh", source=source_id, unchanged=unchanged, records=len(good))
+            self._audit(
+                triggered_by, source_id, "succeeded", run_id, unchanged=unchanged, records=summary.records_loaded
+            )
             return summary
         except Exception as exc:  # recorded, surfaced, never swallowed: previous version remains current
             with self.db.session() as s:
@@ -162,7 +173,14 @@ class ReferenceDataService:
                 )
             METRICS.inc("reference_refresh", source=source_id, outcome="failed")
             log_event(log, "reference_refresh_failed", source=source_id, error=str(exc))
+            self._audit(triggered_by, source_id, "failed", run_id, error=str(exc)[:500])
             return RunSummary(run_id, source_id, "failed", False, 0, 0, None, str(exc), {})
+
+    def _audit(self, actor: str, source_id: str, status: str, run_id: str, **details: Any) -> None:
+        if self.audit is not None:
+            self.audit.append(
+                actor, f"source.refresh_{status}", "source", source_id, {"run_id": run_id, **details}, roles=["system"]
+            )
 
     def _load_version(self, s: Any, source_id: str, document_id: str, records: list[Any]) -> None:
         category = SOURCES[source_id].kind

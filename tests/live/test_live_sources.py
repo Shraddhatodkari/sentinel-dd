@@ -34,7 +34,7 @@ def live(tmp_path_factory):
         )
     )
     yield c
-    c.db.engine.dispose()
+    c.close()
 
 
 def test_official_watchlists_download_and_parse(live):
