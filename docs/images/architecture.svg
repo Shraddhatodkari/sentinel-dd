@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 1000" width="1480" height="1000" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>Sentinel solution architecture</title>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .band-title { font-size: 13px; font-weight: 700; letter-spacing: .08em; fill: #0b1b33; }
+      .band-sub { font-size: 11px; fill: #64748b; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .box-dark { fill: #0b1b33; }
+      .box-accent { fill: #e8efff; stroke: #93b4f8; stroke-width: 1.2; }
+      .box-warn { fill: #fff4e5; stroke: #f5c27a; stroke-width: 1.2; }
+      .box-ok { fill: #e7f6ee; stroke: #8fd3ad; stroke-width: 1.2; }
+      .h { font-size: 13.5px; font-weight: 650; fill: #0f172a; }
+      .hw { font-size: 13.5px; font-weight: 650; fill: #ffffff; }
+      .t { font-size: 11.5px; fill: #475569; }
+      .tw { font-size: 11.5px; fill: #c7d2e3; }
+      .num { font-size: 11px; font-weight: 700; fill: #ffffff; }
+      .flow { stroke: #64748b; stroke-width: 1.6; fill: none; marker-end: url(#arr); }
+      .flow-dash { stroke: #94a3b8; stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; marker-end: url(#arr); }
+    </style>
+  </defs>
+
+  <rect width="1480" height="1000" fill="#f6f8fb"/>
+
+  <!-- Header -->
+  <text x="40" y="48" font-size="24" font-weight="750" fill="#0b1b33">Sentinel — solution architecture</text>
+  <text x="40" y="72" font-size="13" fill="#475569">Evidence-first due diligence: authoritative sources → traceable evidence → explainable assessment → deterministic policy → accountable human decision</text>
+
+  <!-- ===================== Layer 1: Users / channels ===================== -->
+  <rect x="40" y="96" width="1100" height="118" rx="10" fill="#eef2f7"/>
+  <text x="58" y="120" class="band-title">1 · USERS &amp; CHANNELS</text>
+
+  <rect x="58" y="134" width="196" height="64" rx="8" class="box"/>
+  <text x="74" y="158" class="h">Analyst</text><text x="74" y="178" class="t">opens investigations</text>
+  <rect x="268" y="134" width="196" height="64" rx="8" class="box"/>
+  <text x="284" y="158" class="h">Reviewers (2 tiers)</text><text x="284" y="178" class="t">decide cases (maker-checker)</text>
+  <rect x="478" y="134" width="196" height="64" rx="8" class="box"/>
+  <text x="494" y="158" class="h">Auditor / 2nd line</text><text x="494" y="178" class="t">audit trail, model inventory</text>
+  <rect x="688" y="134" width="196" height="64" rx="8" class="box"/>
+  <text x="704" y="158" class="h">AI agents (MCP)</text><text x="704" y="178" class="t">authorised tools, no decisions</text>
+  <rect x="898" y="134" width="226" height="64" rx="8" class="box"/>
+  <text x="914" y="158" class="h">Operators (CLI, CronJob)</text><text x="914" y="178" class="t">list refresh, training, migrations</text>
+
+  <!-- ===================== Layer 2: Experience / API ===================== -->
+  <rect x="40" y="228" width="1100" height="104" rx="10" fill="#eef2f7"/>
+  <text x="58" y="252" class="band-title">2 · EXPERIENCE &amp; ACCESS</text>
+  <rect x="58" y="264" width="330" height="54" rx="8" class="box-accent"/>
+  <text x="74" y="286" class="h">Analyst dashboard</text><text x="74" y="305" class="t">React · TypeScript · strict CSP</text>
+  <rect x="402" y="264" width="420" height="54" rx="8" class="box-accent"/>
+  <text x="418" y="286" class="h">REST API /api/v1 (FastAPI)</text><text x="418" y="305" class="t">JWT · RBAC · tenant isolation · rate limits · idempotency</text>
+  <rect x="836" y="264" width="288" height="54" rx="8" class="box-accent"/>
+  <text x="852" y="286" class="h">MCP server · CLI</text><text x="852" y="305" class="t">same authorised tool registry</text>
+
+  <!-- ===================== Layer 3: Orchestration ===================== -->
+  <rect x="40" y="346" width="1100" height="170" rx="10" fill="#eef2f7"/>
+  <text x="58" y="370" class="band-title">3 · AGENT ORCHESTRATION</text>
+  <text x="290" y="370" class="band-sub">LangGraph state machine · durable checkpoints (PostgreSQL) · per-node trace · bounded critic loop · human-review interrupt</text>
+
+  <!-- pipeline -->
+  <g>
+    <rect x="58" y="388" width="104" height="44" rx="7" class="box-dark"/><text x="72" y="415" class="hw">Resolve</text>
+    <rect x="186" y="384" width="132" height="22" rx="5" class="box"/><text x="196" y="400" class="t">Registry &amp; ownership</text>
+    <rect x="186" y="410" width="132" height="22" rx="5" class="box"/><text x="196" y="426" class="t">Filings (10-K)</text>
+    <rect x="186" y="436" width="132" height="22" rx="5" class="box"/><text x="196" y="452" class="t">Financials (XBRL)</text>
+    <rect x="186" y="462" width="132" height="22" rx="5" class="box"/><text x="196" y="478" class="t">Enforcement &amp; news</text>
+    <text x="196" y="502" class="band-sub">parallel collectors</text>
+    <rect x="342" y="388" width="104" height="44" rx="7" class="box-dark"/><text x="356" y="415" class="hw">Screen</text>
+    <rect x="470" y="388" width="118" height="44" rx="7" class="box-dark"/><text x="482" y="408" class="hw">Research</text><text x="482" y="424" class="tw">RAG + GraphRAG</text>
+    <rect x="612" y="388" width="104" height="44" rx="7" class="box-dark"/><text x="626" y="415" class="hw">Assess</text>
+    <rect x="740" y="388" width="104" height="44" rx="7" class="box-dark"/><text x="754" y="408" class="hw">Report</text><text x="754" y="424" class="tw">+ critic</text>
+    <rect x="868" y="388" width="104" height="44" rx="7" class="box-dark"/><text x="882" y="415" class="hw">Policy</text>
+    <rect x="996" y="388" width="128" height="44" rx="7" fill="#b54708"/><text x="1008" y="408" class="hw">Human review</text><text x="1008" y="424" class="tw" style="fill:#ffe7cc">maker-checker</text>
+  </g>
+  <path d="M162 410 H182" class="flow"/>
+  <path d="M318 410 H338" class="flow"/>
+  <path d="M446 410 H466" class="flow"/>
+  <path d="M588 410 H608" class="flow"/>
+  <path d="M716 410 H736" class="flow"/>
+  <path d="M844 410 H864" class="flow"/>
+  <path d="M972 410 H992" class="flow"/>
+  <path d="M792 432 C792 470, 530 470, 530 436" class="flow-dash"/>
+  <text x="600" y="482" class="band-sub">weak grounding → targeted re-research (max 2)</text>
+
+  <!-- ===================== Layer 4: Intelligence ===================== -->
+  <rect x="40" y="530" width="1100" height="150" rx="10" fill="#eef2f7"/>
+  <text x="58" y="554" class="band-title">4 · ANALYTICS &amp; DECISIONING</text>
+  <text x="300" y="554" class="band-sub">deterministic where decisions are made · AI only where it is grounded in evidence</text>
+
+  <rect x="58" y="568" width="206" height="96" rx="8" class="box"/>
+  <text x="72" y="590" class="h">Sanctions / PEP screening</text>
+  <text x="72" y="610" class="t">RapidFuzz + IDF-weighted</text><text x="72" y="626" class="t">matching, aliases, identifiers</text><text x="72" y="646" class="t">→ potential matches only</text>
+  <rect x="276" y="568" width="206" height="96" rx="8" class="box"/>
+  <text x="290" y="590" class="h">Hybrid RAG</text>
+  <text x="290" y="610" class="t">dense + BM25, RRF, rerank,</text><text x="290" y="626" class="t">MMR; mandatory citations;</text><text x="290" y="646" class="t">grounding score, abstention</text>
+  <rect x="494" y="568" width="206" height="96" rx="8" class="box"/>
+  <text x="508" y="590" class="h">Graph analytics</text>
+  <text x="508" y="610" class="t">evidence-backed ownership</text><text x="508" y="626" class="t">graph (networkx); exposure</text><text x="508" y="646" class="t">paths, each edge cited</text>
+  <rect x="712" y="568" width="206" height="96" rx="8" class="box"/>
+  <text x="726" y="590" class="h">Explainable scoring</text>
+  <text x="726" y="610" class="t">versioned scorecard (8 factors)</text><text x="726" y="626" class="t">+ IsolationForest peer model</text><text x="726" y="646" class="t">on 3,722 SEC filers</text>
+  <rect x="930" y="568" width="194" height="96" rx="8" class="box-warn"/>
+  <text x="944" y="590" class="h">Policy engine</text>
+  <text x="944" y="610" class="t">TPRM rules → REVIEW /</text><text x="944" y="626" class="t">ESCALATE; sanctions always</text><text x="944" y="646" class="t">to a senior reviewer</text>
+
+  <!-- ===================== Layer 5: Data platform ===================== -->
+  <rect x="40" y="694" width="1100" height="128" rx="10" fill="#eef2f7"/>
+  <text x="58" y="718" class="band-title">5 · DATA PLATFORM &amp; LINEAGE</text>
+  <rect x="58" y="732" width="300" height="74" rx="8" class="box"/>
+  <text x="72" y="754" class="h">Resilient ingestion</text>
+  <text x="72" y="774" class="t">retries, backoff, circuit breakers,</text><text x="72" y="790" class="t">fair-access limits, DQ &amp; shrink gates</text>
+  <rect x="372" y="732" width="300" height="74" rx="8" class="box"/>
+  <text x="386" y="754" class="h">Content-addressed raw store</text>
+  <text x="386" y="774" class="t">every response stored by SHA-256;</text><text x="386" y="790" class="t">evidence → document → raw bytes</text>
+  <rect x="686" y="732" width="438" height="74" rx="8" class="box"/>
+  <text x="700" y="754" class="h">PostgreSQL system of record (Alembic)</text>
+  <text x="700" y="774" class="t">facts · evidence · signals · assessments · policy decisions ·</text><text x="700" y="790" class="t">reviews · versioned watch lists · append-only audit</text>
+
+  <!-- ===================== Layer 6: Sources ===================== -->
+  <rect x="40" y="836" width="1100" height="128" rx="10" fill="#0b1b33"/>
+  <text x="58" y="860" class="band-title" style="fill:#ffffff">6 · AUTHORITATIVE PUBLIC SOURCES</text>
+  <rect x="58" y="874" width="252" height="74" rx="8" fill="#13284a"/>
+  <text x="72" y="896" class="hw">Sanctions &amp; PEP lists</text><text x="72" y="916" class="tw">OFAC SDN · UN SC · UK · EU</text><text x="72" y="932" class="tw">US Congress (33,649 records)</text>
+  <rect x="322" y="874" width="252" height="74" rx="8" fill="#13284a"/>
+  <text x="336" y="896" class="hw">SEC EDGAR</text><text x="336" y="916" class="tw">10-K · Exhibit 21 · Forms 3/4</text><text x="336" y="932" class="tw">XBRL facts &amp; frames</text>
+  <rect x="586" y="874" width="252" height="74" rx="8" fill="#13284a"/>
+  <text x="600" y="896" class="hw">GLEIF</text><text x="600" y="916" class="tw">LEI records · Level 2</text><text x="600" y="932" class="tw">consolidation relationships</text>
+  <rect x="850" y="874" width="274" height="74" rx="8" fill="#13284a"/>
+  <text x="864" y="896" class="hw">DOJ · GDELT</text><text x="864" y="916" class="tw">enforcement releases</text><text x="864" y="932" class="tw">global news metadata</text>
+
+  <!-- vertical flows -->
+  <path d="M590 214 V224" class="flow"/>
+  <path d="M590 332 V342" class="flow"/>
+  <path d="M590 516 V526" class="flow"/>
+  <path d="M590 680 V690" class="flow"/>
+  <path d="M590 832 V822" class="flow"/>
+
+  <!-- ===================== Right rail: governance ===================== -->
+  <rect x="1160" y="96" width="280" height="868" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+  <rect x="1160" y="96" width="280" height="46" rx="10" fill="#067647"/>
+  <rect x="1160" y="128" width="280" height="14" fill="#067647"/>
+  <text x="1178" y="125" class="hw">GOVERNANCE &amp; TRUST</text>
+  <g>
+    <text x="1178" y="172" class="h">Human accountability</text>
+    <text x="1178" y="190" class="t">AI never approves; creator cannot</text><text x="1178" y="205" class="t">decide; rationale required</text>
+    <text x="1178" y="238" class="h">Five separated layers</text>
+    <text x="1178" y="256" class="t">fact → signal → assessment →</text><text x="1178" y="271" class="t">policy → human decision</text>
+    <text x="1178" y="304" class="h">Tamper-evident audit</text>
+    <text x="1178" y="322" class="t">hash chain + DB triggers;</text><text x="1178" y="337" class="t">one-click verification</text>
+    <text x="1178" y="370" class="h">Reproducibility</text>
+    <text x="1178" y="388" class="t">scorecard, policy, screening,</text><text x="1178" y="403" class="t">prompt &amp; model versions per case</text>
+    <text x="1178" y="436" class="h">Security</text>
+    <text x="1178" y="454" class="t">least-privilege RBAC, PBKDF2,</text><text x="1178" y="469" class="t">lockout, CSP, rate limits</text>
+    <text x="1178" y="502" class="h">AI safety</text>
+    <text x="1178" y="520" class="t">grounding checks, injection</text><text x="1178" y="535" class="t">guards, DLP masking</text>
+    <text x="1178" y="568" class="h">Data quality &amp; freshness</text>
+    <text x="1178" y="586" class="t">SLAs; stale lists force review;</text><text x="1178" y="601" class="t">degraded coverage is explicit</text>
+    <text x="1178" y="634" class="h">Observability</text>
+    <text x="1178" y="652" class="t">Prometheus metrics, JSON logs,</text><text x="1178" y="667" class="t">health / readiness, agent trace</text>
+    <text x="1178" y="700" class="h">Delivery</text>
+    <text x="1178" y="718" class="t">Docker, Compose, Kubernetes,</text><text x="1178" y="733" class="t">CI: tests, eval gates, SAST</text>
+  </g>
+  <rect x="1176" y="770" width="248" height="178" rx="8" class="box-ok"/>
+  <text x="1192" y="794" class="h">Validated on live data</text>
+  <text x="1192" y="816" class="t">screening recall 100 % (224)</text>
+  <text x="1192" y="836" class="t">false alarms 0.9 % (1,000 SEC names)</text>
+  <text x="1192" y="856" class="t">114 tests · 94.8 % coverage</text>
+  <text x="1192" y="876" class="t">5 real companies end to end on</text>
+  <text x="1192" y="892" class="t">PostgreSQL in Docker</text>
+  <text x="1192" y="920" class="band-sub">evidence: docs/evidence/</text>
+
+  <text x="40" y="988" font-size="11" fill="#64748b">Not a regulatory determination. Screening results are potential matches for human adjudication. See docs/limitations.md.</text>
+</svg>
