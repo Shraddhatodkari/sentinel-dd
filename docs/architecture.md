@@ -1,5 +1,7 @@
 # Architecture
 
+![Sentinel solution architecture](images/architecture.svg)
+
 ## 1. Context
 
 Sentinel is a single deployable service (API + background runner + static dashboard) backed by a relational database
