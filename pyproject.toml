@@ -91,6 +91,7 @@ ignore = ["S101", "S105", "S106", "S107", "B008", "RUF001", "RUF002", "RUF003", 
 
 [tool.mypy]
 python_version = "3.11"
+plugins = ["pydantic.mypy"]
 ignore_missing_imports = true
 warn_unused_ignores = true
 strict_optional = true

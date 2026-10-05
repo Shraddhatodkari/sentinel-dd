@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     pep_max_age_h: int = 24 * 14  # PEP-list freshness SLA (h)
     enable_gdelt: bool = True
     # GDELT window: in testing, 3-month windows returned an empty {} while a 1-week window returned articles
-    gdelt_timespan: str = Field("1week", pattern=r"^\d+(min|h|hours|d|days|week|weeks|month|months)$")
+    gdelt_timespan: str = Field(default="1week", pattern=r"^\d+(min|h|hours|d|days|week|weeks|month|months)$")
     enable_opensanctions_peps: bool = False  # OpenSanctions is CC BY-NC: enable only with a commercial licence
 
     # ------------------------------------------------------------------ retrieval

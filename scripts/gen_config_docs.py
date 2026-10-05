@@ -47,7 +47,7 @@ def table() -> str:
     }
     rows = ["| Variable | Default | Notes |", "|---|---|---|"]
     for name, f in Settings.model_fields.items():
-        d = f.default if f.default_factory is None else f.default_factory()
+        d = f.get_default(call_default_factory=True)
         if name == "jwt_secret":
             d = "(dev value)"
         elif hasattr(d, "get_secret_value"):

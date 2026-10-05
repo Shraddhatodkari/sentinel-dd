@@ -99,7 +99,7 @@ configurable window (default one week), and the final run retrieved GDELT articl
 | Check | Result (2026-10-05) |
 |---|---|
 | `ruff check` / `ruff format --check` (src, tests, scripts) | clean |
-| `mypy src scripts` (104 files) + `gen_config_docs.py --check` | no issues; configuration reference in sync |
+| `python -m mypy src scripts` (104 files, pydantic plugin, project environment) + `gen_config_docs.py --check` | no issues; configuration reference in sync |
 | `bandit -r src scripts -ll` (≈10.7 k LOC) | 0 medium/high findings |
 | `pip-audit` on a clean virtualenv with `sentinel-dd[postgres]` (113 packages) | no known vulnerabilities (`docs/evidence/pip_audit.json`) |
 | `npm audit --omit=dev` (dashboard) | 0 vulnerabilities |

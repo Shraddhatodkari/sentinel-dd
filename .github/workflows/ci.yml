@@ -20,7 +20,7 @@ jobs:
       - name: Lint & format
         run: ruff check src tests scripts && ruff format --check src tests scripts
       - name: Type-check
-        run: mypy src scripts && python scripts/gen_config_docs.py --check
+        run: python -m mypy src scripts && python scripts/gen_config_docs.py --check
 
   dashboard:
     runs-on: ubuntu-latest

@@ -11,7 +11,7 @@ lint:
 format:
 	ruff check src tests scripts --fix && ruff format src tests scripts
 type:
-	mypy src scripts && python scripts/gen_config_docs.py --check && cd dashboard && npx tsc -b --noEmit
+	python -m mypy src scripts && python scripts/gen_config_docs.py --check && cd dashboard && npx tsc -b --noEmit
 test:
 	pytest
 cov:

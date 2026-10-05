@@ -60,7 +60,7 @@ pytest --cov=sentinel                      # coverage gate: 80 %
 sentinel eval                              # offline release gates (screening, media roles, retrieval, routing, grounding, injection)
 sentinel eval --screening-live             # screening recall / false-positive rate against the full loaded lists
 pytest -m live                             # live smoke tests against the real upstream sources
-ruff check src tests scripts && mypy src && bandit -r src -ll
+ruff check src tests scripts && python -m mypy src scripts && bandit -r src scripts -ll
 ```
 
 Results of the runs used for this release, and how they were produced, are in
