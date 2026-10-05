@@ -1,7 +1,9 @@
 # Contributing
 
-1. `make dev` then `pre-commit install`.
-2. Create a feature branch: `feat/<topic>` or `fix/<topic>`.
-3. Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `test:`, `docs:`, `ci:`, `refactor:`).
-4. `make check` must pass (lint, mypy, tests ≥ 80% coverage, eval gates).
-5. Prompt changes: bump `PROMPT_VERSION` in `src/sentinel/prompts.py` and include eval results in the PR.
+1. Set up: see [docs/development.md](docs/development.md); `pre-commit install`.
+2. Branch: `feat/<topic>` or `fix/<topic>`; [Conventional Commits](https://www.conventionalcommits.org/).
+3. `make check` must pass (lint, types, tests with ≥ 80 % coverage, evaluation gates, security scans).
+4. Data: never add fabricated source data. New fixtures are recorded from the real source
+   (`scripts/record_fixtures.py`) or documented excerpts (`scripts/make_watchlist_excerpts.py`).
+5. Schema changes: new Alembic revision. Scorecard/policy/taxonomy/prompt changes: bump the version string and attach
+   `sentinel eval` output to the PR.

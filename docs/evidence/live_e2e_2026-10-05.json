@@ -1,0 +1,315 @@
+{
+ "health": {
+  "status": "ok",
+  "version": "2.0.0"
+ },
+ "ready": {
+  "ready": true,
+  "checks": {
+   "database": true,
+   "migrations_at_head": true,
+   "screening_lists_loaded": true
+  },
+  "schema_revision": "0002_revoked_tokens",
+  "screening_records": 33649
+ },
+ "cases": {
+  "Apple Inc.": {
+   "case_id": "case-64a5227830d0",
+   "status": "awaiting_review",
+   "resolved_name": "Apple Inc.",
+   "risk_band": "LOW",
+   "risk_score": 10.0,
+   "policy_outcome": "REVIEW",
+   "error": null,
+   "rules": [
+    "TPRM-GOV-01"
+   ],
+   "evidence": 41,
+   "signals": 8,
+   "evidence_sources": [
+    "doj_press",
+    "gleif",
+    "sec_edgar"
+   ],
+   "coverage": {
+    "resolution": "ok",
+    "adverse_media": "ok",
+    "corporate_registry": "ok",
+    "insiders": "ok",
+    "filings_text": "ok",
+    "financials": "ok",
+    "screening": "ok"
+   },
+   "errors": [],
+   "peer": {
+    "available": true,
+    "anomaly": false,
+    "reason": null
+   },
+   "grounding": 1.0,
+   "seconds": null
+  },
+  "The Boeing Company": {
+   "case_id": "case-a5df3c531a24",
+   "status": "awaiting_review",
+   "resolved_name": "BOEING CO",
+   "risk_band": "MEDIUM",
+   "risk_score": 33.0,
+   "policy_outcome": "REVIEW",
+   "error": null,
+   "rules": [
+    "TPRM-RSK-02",
+    "TPRM-PEP-01"
+   ],
+   "evidence": 49,
+   "signals": 22,
+   "evidence_sources": [
+    "doj_press",
+    "gleif",
+    "sec_edgar",
+    "us_congress"
+   ],
+   "coverage": {
+    "resolution": "ok",
+    "adverse_media": "partial",
+    "corporate_registry": "ok",
+    "insiders": "ok",
+    "filings_text": "ok",
+    "financials": "ok",
+    "screening": "ok"
+   },
+   "errors": [
+    "gdelt: retries exhausted (429) for https://api.gdeltproject.org/api/v2/doc/doc?format=json&maxrecords=75&mode=artlist&query=%22BOEING+CO%22+sourcelang%3Aenglish&sort=datedesc&timespan=3months"
+   ],
+   "peer": {
+    "available": true,
+    "anomaly": false,
+    "reason": null
+   },
+   "grounding": 1.0,
+   "seconds": null
+  },
+  "Sberbank": {
+   "case_id": "case-1db9670cb4be",
+   "status": "awaiting_review",
+   "resolved_name": "\u041f\u0443\u0431\u043b\u0438\u0447\u043d\u043e\u0435 \u0430\u043a\u0446\u0438\u043e\u043d\u0435\u0440\u043d\u043e\u0435 \u043e\u0431\u0449\u0435\u0441\u0442\u0432\u043e \"\u0421\u0431\u0435\u0440\u0431\u0430\u043d\u043a \u0420\u043e\u0441\u0441\u0438\u0438\"",
+   "risk_band": "HIGH",
+   "risk_score": 75.0,
+   "policy_outcome": "ESCALATE",
+   "error": null,
+   "rules": [
+    "TPRM-SAN-01",
+    "TPRM-JUR-02",
+    "TPRM-RSK-01"
+   ],
+   "evidence": 9,
+   "signals": 4,
+   "evidence_sources": [
+    "eu_fsf",
+    "gleif",
+    "ofac_sdn",
+    "uk_sanctions"
+   ],
+   "coverage": {
+    "resolution": "ok",
+    "adverse_media": "partial",
+    "corporate_registry": "ok",
+    "insiders": "not_applicable",
+    "filings_text": "not_applicable",
+    "financials": "not_applicable",
+    "screening": "ok"
+   },
+   "errors": [
+    "gdelt: retries exhausted (429) for https://api.gdeltproject.org/api/v2/doc/doc?format=json&maxrecords=75&mode=artlist&query=%22Sberbank%22+sourcelang%3Aenglish&sort=datedesc&timespan=3months"
+   ],
+   "peer": {
+    "available": false,
+    "anomaly": null,
+    "reason": "no SEC financial data"
+   },
+   "grounding": 1.0,
+   "seconds": null
+  },
+  "Siemens AG": {
+   "case_id": "case-93c2b0dc9538",
+   "status": "awaiting_review",
+   "resolved_name": "Siemens Aktiengesellschaft",
+   "risk_band": "LOW",
+   "risk_score": 0.0,
+   "policy_outcome": "REVIEW",
+   "error": null,
+   "rules": [
+    "TPRM-GOV-01"
+   ],
+   "evidence": 26,
+   "signals": 0,
+   "evidence_sources": [
+    "gleif"
+   ],
+   "coverage": {
+    "resolution": "ok",
+    "adverse_media": "partial",
+    "corporate_registry": "ok",
+    "insiders": "not_applicable",
+    "filings_text": "not_applicable",
+    "financials": "not_applicable",
+    "screening": "ok"
+   },
+   "errors": [
+    "gdelt: retries exhausted (429) for https://api.gdeltproject.org/api/v2/doc/doc?format=json&maxrecords=75&mode=artlist&query=%22Siemens+Aktiengesellschaft%22+sourcelang%3Aenglish&sort=datedesc&timespan=3months"
+   ],
+   "peer": {
+    "available": false,
+    "anomaly": null,
+    "reason": "no SEC financial data"
+   },
+   "grounding": 1.0,
+   "seconds": null
+  },
+  "Microsoft Corp": {
+   "case_id": "case-b055c2821878",
+   "status": "awaiting_review",
+   "resolved_name": "MICROSOFT CORP",
+   "risk_band": "LOW",
+   "risk_score": 22.0,
+   "policy_outcome": "REVIEW",
+   "error": null,
+   "rules": [
+    "TPRM-GOV-01"
+   ],
+   "evidence": 39,
+   "signals": 16,
+   "evidence_sources": [
+    "doj_press",
+    "sec_edgar"
+   ],
+   "coverage": {
+    "resolution": "ok",
+    "adverse_media": "partial",
+    "corporate_registry": "ok",
+    "insiders": "ok",
+    "filings_text": "ok",
+    "financials": "ok",
+    "screening": "ok"
+   },
+   "errors": [
+    "gdelt: retries exhausted (429) for https://api.gdeltproject.org/api/v2/doc/doc?format=json&maxrecords=75&mode=artlist&query=%22MICROSOFT+CORP%22+sourcelang%3Aenglish&sort=datedesc&timespan=3months"
+   ],
+   "peer": {
+    "available": true,
+    "anomaly": false,
+    "reason": null
+   },
+   "grounding": 1.0,
+   "seconds": null
+  }
+ },
+ "queue_for_bob": [
+  [
+   "Apple Inc.",
+   "REVIEW",
+   true
+  ],
+  [
+   "BOEING CO",
+   "REVIEW",
+   true
+  ],
+  [
+   "\u041f\u0443\u0431\u043b\u0438\u0447\u043d\u043e\u0435 \u0430\u043a\u0446\u0438\u043e\u043d\u0435\u0440\u043d\u043e\u0435 \u043e\u0431\u0449\u0435\u0441\u0442\u0432\u043e \"\u0421\u0431\u0435\u0440\u0431\u0430\u043d\u043a \u0420\u043e\u0441\u0441\u0438\u0438\"",
+   "ESCALATE",
+   false
+  ],
+  [
+   "Siemens Aktiengesellschaft",
+   "REVIEW",
+   true
+  ],
+  [
+   "MICROSOFT CORP",
+   "REVIEW",
+   true
+  ]
+ ],
+ "decisions": [
+  [
+   "Apple Inc.",
+   "REVIEW",
+   "bob",
+   200,
+   "approved"
+  ],
+  [
+   "BOEING CO",
+   "REVIEW",
+   "bob",
+   200,
+   "approved"
+  ],
+  [
+   "\u041f\u0443\u0431\u043b\u0438\u0447\u043d\u043e\u0435 \u0430\u043a\u0446\u0438\u043e\u043d\u0435\u0440\u043d\u043e\u0435 \u043e\u0431\u0449\u0435\u0441\u0442\u0432\u043e \"\u0421\u0431\u0435\u0440\u0431\u0430\u043d\u043a \u0420\u043e\u0441\u0441\u0438\u0438\"",
+   "ESCALATE",
+   "sara",
+   200,
+   "rejected"
+  ],
+  [
+   "Siemens Aktiengesellschaft",
+   "REVIEW",
+   "bob",
+   200,
+   "approved"
+  ],
+  [
+   "MICROSOFT CORP",
+   "REVIEW",
+   "bob",
+   200,
+   "approved"
+  ]
+ ],
+ "self_review_by_creator_blocked": 403,
+ "double_decision_blocked": 409,
+ "audit_verify": {
+  "intact": true,
+  "records": 34,
+  "first_bad_seq": null,
+  "head_matches": true
+ },
+ "status": {
+  "version": "2.0.0",
+  "database": true,
+  "schema_revision": "0002_revoked_tokens",
+  "screening_records": {
+   "ofac_sdn": 19488,
+   "un_sc": 1011,
+   "eu_fsf": 6241,
+   "uk_sanctions": 6370,
+   "us_congress": 539
+  },
+  "circuit_breakers": {
+   "www.sec.gov": "closed",
+   "data.sec.gov": "closed",
+   "api.gleif.org": "closed",
+   "www.justice.gov": "closed",
+   "api.gdeltproject.org": "closed"
+  },
+  "llm": {
+   "provider": "extractive",
+   "model": "extractive-v1"
+  },
+  "llm_usage": [
+   {
+    "provider": "extractive",
+    "calls": 35,
+    "input_tokens": 27737,
+    "output_tokens": 4852,
+    "cost_usd": 0
+   }
+  ],
+  "peer_model": "peer_anomaly:v1",
+  "runner_mode": "background",
+  "audit_records": 35
+ }
+}

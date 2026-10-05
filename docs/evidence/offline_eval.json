@@ -1,0 +1,178 @@
+{
+  "metrics": {
+    "screening_recall": 1.0,
+    "screening_fpr_max": 0.0,
+    "media_role_accuracy": 0.9583,
+    "injection_block_rate": 1.0,
+    "benign_pass_rate": 1.0,
+    "routing_accuracy": 1.0,
+    "retrieval_recall_at_5": 1.0,
+    "mean_grounding": 1.0
+  },
+  "gates": {
+    "screening_recall": 0.95,
+    "screening_fpr_max": 0.01,
+    "media_role_accuracy": 0.85,
+    "retrieval_recall_at_5": 0.8,
+    "routing_accuracy": 1.0,
+    "mean_grounding": 0.8,
+    "injection_block_rate": 0.9,
+    "benign_pass_rate": 1.0
+  },
+  "failures": [],
+  "details": {
+    "reference_loads": [
+      {
+        "source_id": "eu_fsf",
+        "status": "succeeded",
+        "records_loaded": 350
+      },
+      {
+        "source_id": "ofac_sdn",
+        "status": "succeeded",
+        "records_loaded": 1379
+      },
+      {
+        "source_id": "uk_sanctions",
+        "status": "succeeded",
+        "records_loaded": 340
+      },
+      {
+        "source_id": "un_sc",
+        "status": "succeeded",
+        "records_loaded": 622
+      },
+      {
+        "source_id": "us_congress",
+        "status": "succeeded",
+        "records_loaded": 82
+      }
+    ],
+    "screening_sample": 228,
+    "screening_misses": [],
+    "negatives": 1000,
+    "false_positives": [],
+    "cases": [
+      {
+        "entity": "Apple Inc.",
+        "band": "LOW",
+        "score": 10.0,
+        "outcome": "REVIEW",
+        "rules": [
+          "TPRM-GOV-01"
+        ],
+        "expected": {
+          "band": "LOW",
+          "outcome": "REVIEW",
+          "rules_include": [
+            "TPRM-GOV-01"
+          ]
+        },
+        "pass": true,
+        "status": "awaiting_review",
+        "error": null,
+        "coverage": {
+          "resolution": "ok",
+          "adverse_media": "partial",
+          "corporate_registry": "ok",
+          "insiders": "ok",
+          "filings_text": "ok",
+          "financials": "ok",
+          "screening": "ok"
+        }
+      },
+      {
+        "entity": "The Boeing Company",
+        "band": "MEDIUM",
+        "score": 33.0,
+        "outcome": "REVIEW",
+        "rules": [
+          "TPRM-RSK-02",
+          "TPRM-PEP-01"
+        ],
+        "expected": {
+          "band": "MEDIUM",
+          "outcome": "REVIEW",
+          "rules_include": [
+            "TPRM-RSK-02",
+            "TPRM-PEP-01"
+          ]
+        },
+        "pass": true,
+        "status": "awaiting_review",
+        "error": null,
+        "coverage": {
+          "resolution": "ok",
+          "adverse_media": "partial",
+          "corporate_registry": "ok",
+          "insiders": "ok",
+          "filings_text": "ok",
+          "financials": "ok",
+          "screening": "ok"
+        }
+      },
+      {
+        "entity": "Sberbank",
+        "band": "HIGH",
+        "score": 75.0,
+        "outcome": "ESCALATE",
+        "rules": [
+          "TPRM-SAN-01",
+          "TPRM-JUR-02",
+          "TPRM-RSK-01"
+        ],
+        "expected": {
+          "band": "HIGH",
+          "outcome": "ESCALATE",
+          "rules_include": [
+            "TPRM-SAN-01"
+          ]
+        },
+        "pass": true,
+        "status": "awaiting_review",
+        "error": null,
+        "coverage": {
+          "resolution": "ok",
+          "adverse_media": "partial",
+          "corporate_registry": "ok",
+          "insiders": "not_applicable",
+          "filings_text": "not_applicable",
+          "financials": "not_applicable",
+          "screening": "ok"
+        }
+      }
+    ],
+    "retrieval": [
+      {
+        "q": "What legal proceedings does Apple disclose?",
+        "target": "legal_proceedings",
+        "hit": true
+      },
+      {
+        "q": "What are the principal risk factors described in the annual report?",
+        "target": "risk_factors",
+        "hit": true
+      },
+      {
+        "q": "How does Apple manage cybersecurity risk and governance?",
+        "target": "cybersecurity",
+        "hit": true
+      },
+      {
+        "q": "What products and services does the business sell?",
+        "target": "business",
+        "hit": true
+      },
+      {
+        "q": "Which officers and directors filed insider reports?",
+        "target": "insider",
+        "hit": true
+      },
+      {
+        "q": "What revenue and net income were reported?",
+        "target": "financial_facts",
+        "hit": true
+      }
+    ]
+  }
+}

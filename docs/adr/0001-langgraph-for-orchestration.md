@@ -8,10 +8,13 @@ human approval, and replayable state for audit.
 
 ## Decision
 Use LangGraph `StateGraph` with typed state, reducers for parallel merges, `interrupt()`/`Command(resume=…)` for
-HITL, and a pluggable checkpointer (in-memory for dev, Postgres for prod). CrewAI and AutoGen are supported only as
-*alternative front-ends* over the same tool registry. They have no approval tool and cannot bypass policy.
+HITL, and a durable checkpointer (SQLite file for single-node, PostgreSQL for multi-replica). Optional CrewAI/AutoGen
+adapters (`agents/integrations`, untested in CI) wrap the same tool registry; they have no approval tool and cannot
+bypass policy.
 
 ## Consequences
 + Explicit, testable graph; the governance gate is a node, not a prompt.
 + Durable HITL: the process can restart between submission and decision.
-- Graph changes need migrations for in-flight checkpoints (we version state keys).
+- Graph changes can break in-flight checkpoints; retries start a new attempt (`thread_id = case_id:attempt`).
+
+*v2 update:* parallel collectors with a barrier join, a bounded critic loop and per-node `case_events` were added.

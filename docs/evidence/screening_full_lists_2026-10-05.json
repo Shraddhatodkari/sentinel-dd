@@ -1,0 +1,61 @@
+{
+  "metrics": {
+    "screening_recall": 1.0,
+    "screening_fpr_max": 0.009
+  },
+  "gates": {
+    "screening_recall": 0.95,
+    "screening_fpr_max": 0.01
+  },
+  "failures": [],
+  "screening_sample": 224,
+  "screening_misses": [],
+  "negatives": 1000,
+  "false_positives": [
+    [
+      "SUN",
+      "SUN",
+      1.0
+    ],
+    [
+      "VASO Corp",
+      "PJSC \u201cVASO\u201d",
+      1.0
+    ],
+    [
+      "NOVA LTD.",
+      "NOVA",
+      1.0
+    ],
+    [
+      "TIDEWATER INC",
+      "Tidewater",
+      1.0
+    ],
+    [
+      "Commercial Vehicle Group, Inc.",
+      "Limited Liability Company \u201cCommercial Vehicles \u2013 GAZ Group\u201d",
+      0.906
+    ],
+    [
+      "TIDEWATER INC",
+      "Tidewater",
+      1.0
+    ],
+    [
+      "M&T BANK CORP",
+      "T-BANK",
+      0.9
+    ],
+    [
+      "Data Storage Corp",
+      "LIMITED LIABILITY COMPANY DATA STORAGE CENTER",
+      0.9
+    ],
+    [
+      "IRON MOUNTAIN INC",
+      "IRON MOUNTAIN ENTERPRISES LIMITED",
+      0.9
+    ]
+  ]
+}

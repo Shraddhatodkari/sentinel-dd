@@ -19,11 +19,13 @@ are slow, vary between analysts, and are hard to evidence to auditors.
 
 ## Solution value levers
 
-1. **Straight-through processing of clean, low-risk vendors.** The policy engine auto-approves only when every
-   check passes.
+1. **Faster clean cases.** Low-risk cases arrive at the reviewer with evidence, coverage and the scorecard already
+   assembled. Auto-clearing exists in the policy engine but is disabled by default; enable it only after a shadow
+   period and with QA sampling.
 2. **Analyst augmentation for complex cases.** The analyst starts from a cited draft memo, a UBO graph and
    screening hits instead of a blank page.
-3. **Better detection** of indirect exposure: k-hop sanctions paths and offshore layering.
+3. **Better detection** of indirect exposure: related-party screening (consolidation parents, subsidiaries, insiders)
+   and exposure paths in the relationship graph.
 4. **Lower audit cost** through the hash-chained audit trail, versioned prompts and models, and stored rationales.
 
 ## KPI framework (measure in a pilot; values here are targets, not claims)
@@ -31,7 +33,7 @@ are slow, vary between analysts, and are hard to evidence to auditors.
 | KPI | Definition | Pilot target |
 |---|---|---|
 | Median case cycle time | case created → final decision | ↓ 50% vs. baseline |
-| Straight-through rate | % auto-approved with no later reversal | 30–50% of low-risk population |
+| Reviewer time on LOW cases | median minutes from case open to decision for LOW band | ↓ vs. baseline (measure in shadow mode) |
 | Reviewer agreement | % of AI recommendations upheld by reviewers | ≥ 85% |
 | Missed-risk rate | critical findings found later that Sentinel missed | ≤ baseline manual rate |
 | Grounding score | share of memo claims supported by cited evidence | ≥ 0.9 |
@@ -41,14 +43,15 @@ are slow, vary between analysts, and are hard to evidence to auditors.
 
 1. **Shadow mode** (4–6 weeks): Sentinel runs alongside analysts. Compare outputs and calibrate thresholds.
 2. **Assisted mode**: analysts use the draft memos, and every decision still goes through a human.
-3. **Straight-through for LOW risk**, with sampling QA (for example 10% re-review) and drift monitoring.
+3. **Optional auto-clear for LOW risk** (configuration change, policy version bump), with sampling QA (for example
+   10 % re-review) and drift monitoring.
 
 ## Risks & mitigations
 
 | Risk | Mitigation |
 |---|---|
-| Hallucinated facts | Grounding checks, mandatory citations, abstention, critic loop, human review below threshold |
+| Hallucinated facts | Default extractive backend (no generation), grounding checks, mandatory citations, abstention, critic loop, review on low grounding |
 | Prompt injection via vendor documents | Context sanitisation, injection scoring, the LLM has no approval authority |
-| Model drift | PSI monitoring, champion/challenger with quality gates |
-| PII exposure | DLP before indexing and in outputs, tokenisation vault, RBAC, network policy |
+| Model drift | PSI monitoring (`sentinel ml drift`), quality gates before promotion |
+| PII exposure | DLP on reports, input guardrails, RBAC, tenant isolation, network policy |
 | Over-reliance on automation | Maker-checker, policy-forced HITL for sanctions/PEP/high risk |

@@ -1,13 +1,14 @@
-# ADR-0003: Pluggable infrastructure with offline defaults
+# ADR-0003: Pluggable providers, relational system of record
 
-**Status:** Accepted
+**Status:** Accepted (revised in v2)
 
 ## Decision
-Every infrastructure dependency has an interface and at least two implementations: an offline/in-process default
-used in tests, and a production adapter (Qdrant/pgvector, Anthropic/Bedrock/Vertex/OpenAI, Sentence-Transformers,
-MLflow). These are wired in `container.py` from environment variables.
+LLM providers (extractive default, Anthropic, OpenAI, Bedrock, Vertex) and embedding backends are interfaces wired
+in `container.py` from configuration. Persistent state is **not** pluggable: it lives in a relational database
+(PostgreSQL in production, SQLite for development and tests) managed by Alembic migrations. The v1 in-memory vector
+stores and graph were removed; per-case retrieval indexes are rebuilt from persisted chunks.
 
 ## Consequences
-+ CI is hermetic, fast (~15 s) and free; no secrets are needed in CI.
-+ Hyperscaler portability: the same code runs on AWS (Bedrock), GCP (Vertex) or with direct Anthropic access.
-- The in-memory defaults are single-replica; production deployments must configure external stores.
++ CI is hermetic: tests replay recorded real responses, use SQLite and the extractive LLM — no secrets needed.
++ One transactional store for cases, evidence, decisions and audit.
+- External vector databases are not used; per-case indexes are small, so this is acceptable at current scale.

@@ -1,6 +1,15 @@
-# Security Policy
+# Security policy
 
-Please report vulnerabilities privately to the maintainer by email rather than opening a public issue.
-Include reproduction steps and the affected version. You will get an acknowledgement within 72 hours.
+## Reporting a vulnerability
 
-See `docs/security_threat_model.md` for the controls in place.
+Report vulnerabilities privately by e-mail to the maintainer (see the git author address) rather than in a public
+issue. Include the affected version/commit, reproduction steps and impact. You will receive an acknowledgement
+within 72 hours. Please do not test against deployments you do not own.
+
+## Supported versions
+
+Only the latest release (2.x) receives fixes.
+
+## Controls
+
+See [docs/security.md](docs/security.md) and [docs/threat_model.md](docs/threat_model.md).

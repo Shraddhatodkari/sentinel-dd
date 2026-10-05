@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "metrics": {
+    "n_samples": 3722.0,
+    "anomaly_rate": 0.05024180548092423,
+    "seed_agreement": 0.9897904352498657
+  },
+  "passed_gates": true,
+  "promoted": true,
+  "reasons": [
+    "promoted"
+  ]
+}
