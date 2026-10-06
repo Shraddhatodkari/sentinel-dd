@@ -165,7 +165,7 @@
   <text x="1192" y="794" class="h">Validated on live data</text>
   <text x="1192" y="816" class="t">screening recall 100 % (224)</text>
   <text x="1192" y="836" class="t">false alarms 0.9 % (1,000 SEC names)</text>
-  <text x="1192" y="856" class="t">114 tests · 94.8 % coverage</text>
+  <text x="1192" y="856" class="t">115 tests · 94.9 % coverage</text>
   <text x="1192" y="876" class="t">5 real companies end to end on</text>
   <text x="1192" y="892" class="t">PostgreSQL in Docker</text>
   <text x="1192" y="920" class="band-sub">evidence: docs/evidence/</text>
