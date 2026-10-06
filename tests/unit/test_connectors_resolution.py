@@ -79,3 +79,15 @@ def test_resolution_paths(container):
     assert prof2 is None and sber.lei == "549300WE6TAF5EEWQS81" and sber.country == "RU" and sber.method == "gleif_name"
     unknown, _, _ = r.resolve("Zzzq Nonexistent Holdings")
     assert not unknown.resolved and unknown.confidence == 0.0 and unknown.entity_id is None
+
+
+def test_legal_form_abbreviations_expand_for_registry_search():
+    """SEC's index abbreviates legal forms ("MICROSOFT CORP"); GLEIF stores the registered form
+    ("MICROSOFT CORPORATION", LEI INR2EJN1ERAN0W5ZP974), so the abbreviated form alone finds nothing."""
+    from sentinel.sources.edgar import name_variants
+
+    assert name_variants("MICROSOFT CORP") == ["MICROSOFT CORP", "MICROSOFT Corporation"]
+    assert name_variants("Microsoft Corp.")[-1] == "Microsoft Corporation"
+    assert name_variants("BOEING CO")[-1] == "BOEING Company"
+    assert name_variants("Siemens AG")[-1] == "Siemens Aktiengesellschaft"
+    assert name_variants("Apple") == ["Apple"]  # no legal form → no variant

@@ -87,9 +87,8 @@ class EntityResolver:
                 if res.method == "unresolved":
                     res.method = "lei"
             else:
-                gleif_cands = self.gleif.search(
-                    profile.name if profile else query, variants=[*name_variants(query), query]
-                )
+                base = profile.name if profile else query
+                gleif_cands = self.gleif.search(base, variants=[*name_variants(base), *name_variants(query), query])
                 if gleif_cands:
                     best = gleif_cands[0]
                     if profile is not None:

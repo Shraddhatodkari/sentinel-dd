@@ -44,6 +44,11 @@ _LEGAL_EXPANSIONS = {
     "nv": "N.V.",
     "spa": "S.p.A.",
     "gmbh": "Gesellschaft mit beschränkter Haftung",
+    # SEC company-index abbreviations; GLEIF stores the full registered form ("MICROSOFT CORP" → "Corporation")
+    "corp": "Corporation",
+    "inc": "Incorporated",
+    "co": "Company",
+    "ltd": "Limited",
 }
 
 
