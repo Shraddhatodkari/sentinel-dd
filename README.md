@@ -118,13 +118,13 @@ All figures come from runs whose raw output is stored in [`docs/evidence/`](docs
 
 ## Product
 
-| Executive overview | Case workspace |
+| Executive overview | Sberbank case overview |
 |---|---|
-| ![Overview](docs/images/live-overview.png) | ![Case](docs/images/case-overview-sberbank.png) |
-| **Explainable scorecard** | **Ownership graph & exposure paths** |
-| ![Scorecard](docs/images/case-risk-scorecard.png) | ![Ownership](docs/images/case-ownership-graph.png) |
-| **Adverse media with subject role** | **Audit trail with chain verification** |
-| ![Media](docs/images/live-boeing-media.png) | ![Audit](docs/images/audit-trail.png) |
+| ![Executive Overview](docs/images/screenshots/executive-overview.png) | ![Sberbank Overview](docs/images/screenshots/sberbank-overview.png) |
+
+| Sberbank sanctions & PEP |
+|---|
+| ![Sberbank Sanctions & PEP](docs/images/screenshots/sberbank-sanctions-pep.png) |
 
 More: [docs/dashboard.md](docs/dashboard.md).
 
