@@ -1,6 +1,7 @@
 # Business Case: Cutting Vendor Risk Checks from 3 Weeks to 3 Days with AI
 
 **Project:** Sentinel DD — third-party risk and sanctions screening
+
 **Author:** Shraddha Todkari
 
 > All figures below are illustrative estimates based on stated assumptions, not client data.
